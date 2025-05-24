@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vaccine Mandate Decision Aid Tool</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-papNMzNnQn5iH+1G+FHu8SyuXHs6A1k+Ln7tK5qRo1l5eYm6Jzv+1pArJ7N4C9FfpRrmAgM3tYWd3FZ9jKz1Bw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- Chart.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- jsPDF Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Vaccine Mandate Decision Aid Tool</h1>
+      <p>
+        Explore and compare vaccine mandate scenarios based on public preferences.
+      </p>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tablink active" data-tab="introTab" aria-selected="true">
+        <i class="fa-solid fa-info-circle"></i><span> Introduction</span>
+      </button>
+      <button class="tablink" data-tab="attributesTab" aria-selected="false">
+        <i class="fa-solid fa-list"></i><span> Attributes</span>
+      </button>
+      <button class="tablink" data-tab="inputsTab" aria-selected="false">
+        <i class="fa-solid fa-sliders"></i><span> Inputs</span>
+      </button>
+      <button class="tablink" data-tab="mrsTab" aria-selected="false">
+        <i class="fa-solid fa-exchange-alt"></i><span> MRS</span>
+      </button>
+      <button class="tablink" data-tab="probTab" aria-selected="false">
+        <i class="fa-solid fa-chart-pie"></i><span> Uptake</span>
+      </button>
+      <button class="tablink" data-tab="costsTab" aria-selected="false">
+        <i class="fa-solid fa-calculator"></i><span> Costs &amp; Benefits</span>
+      </button>
+      <button class="tablink" data-tab="scenariosTab" aria-selected="false">
+        <i class="fa-solid fa-folder-open"></i><span> Scenarios</span>
+      </button>
+    </nav>
+
+    <!-- Introduction Tab -->
+    <section id="introTab" class="tabcontent" tabindex="0" style="display: block;">
+      <div class="intro-box card">
+        <p>
+          Vaccine mandates differ in scope and conditions. This tool employs discrete choice experiment estimates to illustrate trade-offs among key attributes.
+        </p>
+        <ul>
+          <li><strong>Attributes</strong> – View definitions and reference levels.</li>
+          <li><strong>Inputs</strong> – Configure your scenario (reference levels applied by default).</li>
+          <li><strong>MRS</strong> – See trade-off measures between attributes.</li>
+          <li><strong>Uptake</strong> – Predicted acceptance rate (base = 2000).</li>
+          <li><strong>Costs &amp; Benefits</strong> – Dynamic benefit–cost analysis.</li>
+          <li><strong>Scenarios</strong> – Save, compare and export your configurations.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Attributes Tab -->
+    <section id="attributesTab" class="tabcontent" tabindex="0">
+      <h2>Key Mandate Attributes</h2>
+      <div class="attributes-list column">
+
+        <!-- Attribute 1: Scope -->
+        <div class="attribute-card card">
+          <div class="attribute-icon">
+            <i class="fa-solid fa-users" style="font-size:24px;color:#2980b9"></i>
+            <i class="fa-solid fa-info-circle info-icon"></i>
+            <span class="tooltip">
+              Reference: High-risk occupations only<br>
+              <em>Only healthcare workers, emergency responders, etc.</em>
+            </span>
+          </div>
+          <div class="attribute-content">
+            <h4>Scope of the Mandate</h4>
+            <p>
+              <strong>Reference:</strong> High-risk occupations only<br>
+              <strong>Alternative:</strong> All occupations and public spaces.
+            </p>
+          </div>
+        </div>
+
+        <!-- Attribute 2: Exemption -->
+        <div class="attribute-card card">
+          <div class="attribute-icon">
+            <i class="fa-solid fa-user-shield" style="font-size:24px;color:#8e44ad"></i>
+            <i class="fa-solid fa-info-circle info-icon"></i>
+            <span class="tooltip">
+              Reference: Medical only<br>
+              <em>Only doctor-certified conditions.</em>
+            </span>
+          </div>
+          <div class="attribute-content">
+            <h4>Exemption Policy</h4>
+            <p>
+              <strong>Reference:</strong> Medical only<br>
+              <strong>Alternatives:</strong><br>
+              – Medical + religious<br>
+              – Medical, religious + broad personal beliefs
+            </p>
+          </div>
+        </div>
+
+        <!-- Attribute 3: Coverage Requirement -->
+        <div class="attribute-card card">
+          <div class="attribute-icon">
+            <i class="fa-solid fa-percentage" style="font-size:24px;color:#27ae60"></i>
+            <i class="fa-solid fa-info-circle info-icon"></i>
+            <span class="tooltip">
+              Reference: 50% vaccinated<br>
+              <em>Half the population.</em>
+            </span>
+          </div>
+          <div class="attribute-content">
+            <h4>Vaccine Coverage Requirement</h4>
+            <p>
+              <strong>Reference:</strong> 50%<br>
+              <strong>Alternatives:</strong><br>
+              – 70%<br>
+              – 90%
+            </p>
+          </div>
+        </div>
+
+        <!-- Attribute 4: Lives Saved -->
+        <div class="attribute-card card">
+          <div class="attribute-icon">
+            <i class="fa-solid fa-heart-pulse" style="font-size:24px;color:#e74c3c"></i>
+            <i class="fa-solid fa-info-circle info-icon"></i>
+            <span class="tooltip">
+              Continuous: Lives saved per 100 000<br>
+              <em>Higher is better.</em>
+            </span>
+          </div>
+          <div class="attribute-content">
+            <h4>Estimated Lives Saved</h4>
+            <p>
+              Continuous attribute: number of lives saved per 100 000 population.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Inputs Tab -->
+    <section id="inputsTab" class="tabcontent" tabindex="0">
+      <div class="input-card card">
+        <h2>Scenario Inputs</h2>
+        <form onsubmit="event.preventDefault();">
+          <div class="input-cards">
+
+            <!-- Scope -->
+            <div class="input-level-card">
+              <h3>Scope of the Mandate</h3>
+              <p>Reference: High-risk occupations only</p>
+              <label><input type="radio" name="scope" value="all"> All occupations and public spaces</label>
+            </div>
+
+            <!-- Exemption -->
+            <div class="input-level-card">
+              <h3>Exemption Policy</h3>
+              <p>Reference: Medical only</p>
+              <label><input type="radio" name="exemption" value="medRel"> Medical + religious</label>
+              <label><input type="radio" name="exemption" value="all"> Medical, religious + broad personal beliefs</label>
+            </div>
+
+            <!-- Coverage -->
+            <div class="input-level-card">
+              <h3>Coverage Requirement</h3>
+              <p>Reference: 50% vaccinated</p>
+              <label><input type="radio" name="coverage" value="70"> 70% vaccinated</label>
+              <label><input type="radio" name="coverage" value="90"> 90% vaccinated</label>
+            </div>
+
+            <!-- Lives Saved Slider -->
+            <div class="input-level-card">
+              <h3>Lives Saved per 100 000</h3>
+              <input type="range" id="livesSaved" min="10" max="40" step="5" value="25" oninput="document.getElementById('livesSavedValue').textContent=this.value">
+              <p><span id="livesSavedValue">25</span> lives</p>
+            </div>
+
+          </div>
+
+          <div class="buttons-row">
+            <button type="button" onclick="calculateScenario()">Calculate &amp; View Results</button>
+          </div>
+        </form>
+
+        <!-- Results Modal -->
+        <div id="resultModal" class="modal">
+          <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">&times;</span>
+            <div id="modalResults"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MRS Tab -->
+    <section id="mrsTab" class="tabcontent" tabindex="0">
+      <div class="calculation-info card">
+        <h4>Marginal Rate of Substitution (MRS)</h4>
+        <canvas id="mrsChart"></canvas>
+        <div id="mrsInfo"></div>
+      </div>
+    </section>
+
+    <!-- Uptake Tab -->
+    <section id="probTab" class="tabcontent" tabindex="0">
+      <div class="calculation-info card">
+        <h4>Predicted Uptake</h4>
+        <button onclick="renderUptakeChart()">Show Uptake Chart</button>
+        <div class="chart-box" style="height:300px;">
+          <canvas id="uptakeChart"></canvas>
+        </div>
+        <button onclick="showUptakeRecommendations()">View Recommendations</button>
+      </div>
+      <!-- Recommendations Modal -->
+      <div id="uptakeModal" class="modal">
+        <div class="modal-content">
+          <span class="close-button" onclick="closeUptakeModal()">&times;</span>
+          <div id="uptakeResults"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Costs & Benefits Tab -->
+    <section id="costsTab" class="tabcontent" tabindex="0">
+      <div class="calculation-info card">
+        <h4>Costs &amp; Benefits Analysis</h4>
+        <label for="benefitScenario">Benefit Scenario:</label>
+        <select id="benefitScenario" onchange="renderCostsBenefits()">
+          <option value="low">Low (400)</option>
+          <option value="medium" selected>Medium (500)</option>
+          <option value="high">High (600)</option>
+        </select>
+        <div id="costsBenefitsResults"></div>
+      </div>
+    </section>
+
+    <!-- Scenarios Tab -->
+    <section id="scenariosTab" class="tabcontent" tabindex="0">
+      <div class="calculation-info card">
+        <h4>Saved Scenarios</h4>
+        <button onclick="saveScenario()">Save Scenario</button>
+        <button onclick="openComparison()">Compare & Export PDF</button>
+        <button onclick="downloadCSV()">Download CSV</button>
+        <div class="table-container">
+          <table id="scenarioTable">
+            <thead>
+              <tr>
+                <th>Name</th><th>Scope</th><th>Exemption</th><th>Coverage</th><th>Lives</th><th>Uptake (%)</th><th>Net Benefit</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>&copy; 2025 Vaccine Mandate Decision Aid Tool</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
