@@ -5,49 +5,77 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vaccine Mandate Decision Aid Tool</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-papNMzNnQn5iH+1G+FHu8SyuXHs6A1k+Ln7tK5qRo1l5eYm6Jzv+1pArJ7N4C9FfpRrmAgM3tYWd3FZ9jKz1Bw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
+
     <header>
       <h1>Vaccine Mandate Decision Aid Tool</h1>
       <p>Explore and compare vaccine mandate scenarios based on public preferences.</p>
     </header>
 
     <div class="instruction-banner card">
-      <strong>How to Use:</strong> Go to <em>Inputs</em>, choose your attribute levels and adjust the “Lives Saved” slider. Click “Calculate” to see predicted uptake, WTSL chart, and cost–benefit breakdown. Save scenarios under the <em>Scenarios</em> tab.
+      <i class="fa-solid fa-circle-info info-icon" data-tooltip="Follow these steps to use the tool effectively."></i>
+      <strong>How to Use:</strong> Switch to <em>Inputs</em>, select attribute levels + adjust “Lives Saved” slider, then click <em>Calculate</em> to view results. Save scenarios under <em>Scenarios</em>.
     </div>
 
     <nav class="tabs" role="tablist">
-      <button class="tablink active" data-tab="introTab"><i class="fa-solid fa-info-circle"></i> Introduction</button>
-      <button class="tablink" data-tab="attributesTab"><i class="fa-solid fa-list"></i> Attributes</button>
-      <button class="tablink" data-tab="inputsTab"><i class="fa-solid fa-sliders"></i> Inputs</button>
-      <button class="tablink" data-tab="wtslTab"><i class="fa-solid fa-chart-bar"></i> WTSL</button>
-      <button class="tablink" data-tab="probTab"><i class="fa-solid fa-chart-pie"></i> Uptake</button>
-      <button class="tablink" data-tab="costsTab"><i class="fa-solid fa-calculator"></i> Costs & Benefits</button>
-      <button class="tablink" data-tab="scenariosTab"><i class="fa-solid fa-folder-open"></i> Scenarios</button>
+      <button class="tablink active" data-tab="introTab">
+        <i class="fa-solid fa-info-circle info-icon" data-tooltip="Overview of the tool"></i>
+        Introduction
+      </button>
+      <button class="tablink" data-tab="attributesTab">
+        <i class="fa-solid fa-list info-icon" data-tooltip="Definitions of each attribute"></i>
+        Attributes
+      </button>
+      <button class="tablink" data-tab="inputsTab">
+        <i class="fa-solid fa-sliders info-icon" data-tooltip="Configure your scenario"></i>
+        Inputs
+      </button>
+      <button class="tablink" data-tab="wtslTab">
+        <i class="fa-solid fa-chart-bar info-icon" data-tooltip="Trade‐off in lives saved"></i>
+        WTSL
+      </button>
+      <button class="tablink" data-tab="probTab">
+        <i class="fa-solid fa-chart-pie info-icon" data-tooltip="Predicted uptake pie chart"></i>
+        Uptake
+      </button>
+      <button class="tablink" data-tab="costsTab">
+        <i class="fa-solid fa-calculator info-icon" data-tooltip="Detailed cost vs benefit"></i>
+        Costs &amp; Benefits
+      </button>
+      <button class="tablink" data-tab="scenariosTab">
+        <i class="fa-solid fa-folder-open info-icon" data-tooltip="Save & compare scenarios"></i>
+        Scenarios
+      </button>
     </nav>
 
     <!-- Introduction -->
     <section id="introTab" class="tabcontent" style="display:block;">
       <div class="intro-box card">
-        <h2>Introduction</h2>
+        <h2>
+          Introduction
+          <i class="fa-solid fa-circle-info info-icon" data-tooltip="What this tool does"></i>
+        </h2>
         <p>This tool uses DCE‐based coefficients to model trade‐offs among four mandate attributes and estimate uptake, willingness to save lives (WTSL), and net benefits.</p>
       </div>
     </section>
 
     <!-- Attributes -->
     <section id="attributesTab" class="tabcontent">
-      <h2>Key Mandate Attributes</h2>
+      <h2>
+        Key Mandate Attributes
+        <i class="fa-solid fa-circle-info info-icon" data-tooltip="Descriptions and reference levels"></i>
+      </h2>
       <div class="attributes-list">
         <!-- Scope -->
         <div class="attribute-card card">
           <div class="attribute-icon">
             <i class="fa-solid fa-users"></i>
-            <i class="fa-solid fa-info-circle info-icon"></i>
-            <span class="tooltip">Ref: High-risk occupations only<br><em>Healthcare, emergency responders, etc.</em></span>
+            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Who must be vaccinated?"></i>
           </div>
           <div class="attribute-content">
             <h4>Scope of the Mandate</h4>
@@ -59,13 +87,11 @@
         <div class="attribute-card card">
           <div class="attribute-icon">
             <i class="fa-solid fa-user-shield"></i>
-            <i class="fa-solid fa-info-circle info-icon"></i>
-            <span class="tooltip">Ref: Medical only<br><em>Doctor-certified health exemptions.</em></span>
+            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Who may opt out?"></i>
           </div>
           <div class="attribute-content">
             <h4>Exemption Policy</h4>
             <p><strong>Reference:</strong> Medical only</p>
-            <p><strong>Alternatives:</strong></p>
             <ul>
               <li>Medical + religious</li>
               <li>Medical, religious + broad personal beliefs</li>
@@ -76,8 +102,7 @@
         <div class="attribute-card card">
           <div class="attribute-icon">
             <i class="fa-solid fa-percentage"></i>
-            <i class="fa-solid fa-info-circle info-icon"></i>
-            <span class="tooltip">Ref: 50% vaccinated<br><em>Half the population.</em></span>
+            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Vaccination threshold to lift mandates"></i>
           </div>
           <div class="attribute-content">
             <h4>Vaccine Coverage Requirement</h4>
@@ -89,8 +114,7 @@
         <div class="attribute-card card">
           <div class="attribute-icon">
             <i class="fa-solid fa-heart-pulse"></i>
-            <i class="fa-solid fa-info-circle info-icon"></i>
-            <span class="tooltip">Continuous: Lives saved per 100 000<br><em>Higher is better.</em></span>
+            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Continuous lives‐saved attribute"></i>
           </div>
           <div class="attribute-content">
             <h4>Estimated Lives Saved</h4>
@@ -103,41 +127,42 @@
     <!-- Inputs -->
     <section id="inputsTab" class="tabcontent">
       <div class="input-card card">
-        <h2>Configure Scenario</h2>
+        <h2>
+          Configure Scenario
+          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Select your scenario settings"></i>
+        </h2>
         <form onsubmit="event.preventDefault();">
           <div class="input-cards">
-            <!-- Scope -->
             <div class="input-level-card">
               <h3>Scope</h3>
               <p>(Ref: High-risk occupations only)</p>
               <label><input type="radio" name="scope" value="all"> All occupations & public spaces</label>
             </div>
-            <!-- Exemption -->
             <div class="input-level-card">
               <h3>Exemption</h3>
               <p>(Ref: Medical only)</p>
               <label><input type="radio" name="exemption" value="medRel"> Medical + religious</label>
               <label><input type="radio" name="exemption" value="all"> Med+religious+personal</label>
             </div>
-            <!-- Coverage -->
             <div class="input-level-card">
               <h3>Coverage</h3>
               <p>(Ref: 50%)</p>
               <label><input type="radio" name="coverage" value="70"> 70%</label>
               <label><input type="radio" name="coverage" value="90"> 90%</label>
             </div>
-            <!-- Lives Saved -->
             <div class="input-level-card">
               <h3>Lives Saved</h3>
-              <input type="range" id="livesSaved" min="10" max="40" step="5" value="25" oninput="document.getElementById('livesSavedValue').textContent=this.value">
+              <input type="range" id="livesSaved" min="10" max="40" step="5" value="25"
+                     oninput="document.getElementById('livesSavedValue').textContent=this.value" />
               <p><strong><span id="livesSavedValue">25</span></strong> per 100 000</p>
             </div>
           </div>
           <div class="buttons-row">
-            <button type="button" onclick="calculateScenario()">Calculate & View Results</button>
+            <button type="button" onclick="calculateScenario()">
+              <i class="fa-solid fa-calculator"></i> Calculate & View Results
+            </button>
           </div>
         </form>
-
         <!-- Results Modal -->
         <div id="resultModal" class="modal">
           <div class="modal-content">
@@ -151,7 +176,10 @@
     <!-- WTSL -->
     <section id="wtslTab" class="tabcontent">
       <div class="calculation-info card">
-        <h4>Willingness to Save Lives (WTSL)</h4>
+        <h4>
+          Willingness to Save Lives (WTSL)
+          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Lives needed to offset attribute changes"></i>
+        </h4>
         <canvas id="wtslChart"></canvas>
         <div id="wtslInfo"></div>
       </div>
@@ -160,10 +188,13 @@
     <!-- Uptake -->
     <section id="probTab" class="tabcontent">
       <div class="calculation-info card">
-        <h4>Predicted Uptake</h4>
-        <button onclick="renderUptakeChart()">Show Uptake Chart</button>
+        <h4>
+          Predicted Uptake
+          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Acceptance rate based on utility"></i>
+        </h4>
+        <button onclick="renderUptakeChart()"><i class="fa-solid fa-chart-pie"></i> Show Uptake Chart</button>
         <div class="chart-box"><canvas id="uptakeChart"></canvas></div>
-        <button onclick="showUptakeRecommendations()">Dynamic Recommendations</button>
+        <button onclick="showUptakeRecommendations()"><i class="fa-solid fa-lightbulb"></i> Dynamic Recommendations</button>
       </div>
       <div id="uptakeModal" class="modal">
         <div class="modal-content">
@@ -176,7 +207,10 @@
     <!-- Costs & Benefits -->
     <section id="costsTab" class="tabcontent">
       <div class="calculation-info card">
-        <h4>Cost–Benefit Analysis</h4>
+        <h4>
+          Cost–Benefit Analysis
+          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Detailed breakdown of costs and benefits"></i>
+        </h4>
         <label for="benefitScenario">Benefit Scenario:</label>
         <select id="benefitScenario" onchange="renderCostsBenefits()">
           <option value="low">Low (400)</option>
@@ -190,20 +224,30 @@
     <!-- Scenarios -->
     <section id="scenariosTab" class="tabcontent">
       <div class="calculation-info card">
-        <h4>Saved Scenarios</h4>
-        <button onclick="saveScenario()">Save Scenario</button>
-        <button onclick="openComparison()">Compare & Export PDF</button>
-        <button onclick="downloadCSV()">Download CSV</button>
+        <h4>
+          Saved Scenarios
+          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Manage your saved configurations"></i>
+        </h4>
+        <button onclick="saveScenario()"><i class="fa-solid fa-save"></i> Save Scenario</button>
+        <button onclick="openComparison()"><i class="fa-solid fa-file-pdf"></i> Compare & Export PDF</button>
+        <button onclick="downloadCSV()"><i class="fa-solid fa-download"></i> Download CSV</button>
         <div class="table-container">
           <table id="scenarioTable">
-            <thead><tr><th>Name</th><th>Scope</th><th>Exemption</th><th>Coverage</th><th>Lives</th><th>Uptake%</th><th>Net Benefit</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Name</th><th>Scope</th><th>Exemption</th><th>Coverage</th>
+                <th>Lives</th><th>Uptake%</th><th>Net Benefit</th>
+              </tr>
+            </thead>
             <tbody></tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <footer><p>&copy; 2025 Vaccine Mandate Tool NBS</p></footer>
+    <footer>
+      <p>&copy; 2025 Vaccine Mandate Tool</p>
+    </footer>
   </div>
 
   <script src="script.js"></script>
