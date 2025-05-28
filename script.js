@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   );
   openTab("introTab", document.querySelector(".tablink.active"));
 
-  // Activate tooltips via title for accessibility
+  // Activate tooltips via title attribute
   document.querySelectorAll(".info-icon").forEach(icon => {
     const txt = icon.dataset.tooltip;
     if (txt) icon.setAttribute("title", txt);
@@ -29,16 +29,16 @@ function getCurrency(country) {
   return country === "Australia" ? "A$" : "€";
 }
 
-// ─── Updated DCE Coefficients from EC-Logit Model ───────────────────────────────
+// ─── Updated EC-Logit Model Coefficients ─────────────────────────────
 const vaxCoefficients = {
-  scopeAll:      -0.1059746,  // scope2
-  exemptionMedRel: 1.387549,  // exempt2
-  exemptionAll:    1.210117,  // exempt3
-  coverageModerate: -0.5271648, // cov2
-  coverageHigh:     -0.30954,   // cov3
-  livesSavedCoeff:   0.1383641  // lives_cont
+  scopeAll:        -0.1059746,   // scope2
+  exemptionMedRel:  1.387549,    // exempt2
+  exemptionAll:     1.210117,    // exempt3
+  coverageModerate:-0.5271648,   // cov2
+  coverageHigh:    -0.30954,     // cov3
+  livesSavedCoeff:  0.1383641    // lives_cont
 };
-// ────────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────
 
 const colMultipliers = { Australia:1, France:0.95, Italy:0.9 };
 const costParams = {
@@ -87,7 +87,7 @@ function buildScenarioFromInputs() {
 
   const lives = parseInt(document.getElementById("livesSaved").value, 10);
 
-  // Compute utility using updated coefficients
+  // Utility calculation
   let u = 0;
   if (scopeAll)              u += vaxCoefficients.scopeAll;
   if (exVal==="medRel")       u += vaxCoefficients.exemptionMedRel;
@@ -153,6 +153,7 @@ function renderWTSLChart() {
   const ctx = document.getElementById("wtslChart").getContext("2d");
   if (wtslChart) wtslChart.destroy();
 
+  // WTSL calculations
   const wtsl70     = -vaxCoefficients.coverageModerate   / vaxCoefficients.livesSavedCoeff;
   const wtsl90     = -vaxCoefficients.coverageHigh       / vaxCoefficients.livesSavedCoeff;
   const wtslScope  = -vaxCoefficients.scopeAll           / vaxCoefficients.livesSavedCoeff;
@@ -162,18 +163,48 @@ function renderWTSLChart() {
   wtslChart = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: ["Δ50→70%", "Δ50→90%", "Scope Δ", "Med+Rel Δ", "Broad Exempt Δ"],
+      labels: [
+        "Δ50→70% Coverage",
+        "Δ50→90% Coverage",
+        "Expand to All Occupations",
+        "Med+Rel Exemption",
+        "Broad Exemption"
+      ],
       datasets: [{
-        label: "Lives needed per 100k",
-        data: [wtsl70, wtsl90, wtslScope, wtslMedRel, wtslAll],
+        label: "Lives per 100k needed",
+        data: [
+          wtsl70.toFixed(2),
+          wtsl90.toFixed(2),
+          wtslScope.toFixed(2),
+          wtslMedRel.toFixed(2),
+          wtslAll.toFixed(2)
+        ],
         backgroundColor: ["#0074D9","#2ECC40","#FF851B","#B10DC9","#FF4136"]
       }]
     },
-    options: { responsive:true, scales:{ y:{ beginAtZero:true } } }
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: "Lives per 100k" }
+        }
+      },
+      plugins: {
+        title: { display: true, text: "Willingness to Save Lives (WTSL)" }
+      }
+    }
   });
 
   document.getElementById("wtslInfo").innerHTML = `
-    <p>WTSL shows how many extra lives per 100k are needed to offset each attribute change.</p>
+    <p><strong>Intuitive Interpretations:</strong></p>
+    <ul>
+      <li>Raising coverage from 50% to 70% requires ~<strong>${wtsl70.toFixed(2)}</strong> extra lives per 100k.</li>
+      <li>Going from 50% to 90% needs ~<strong>${wtsl90.toFixed(2)}</strong> extra lives.</li>
+      <li>Expanding scope to everyone needs ~<strong>${wtslScope.toFixed(2)}</strong> extra lives.</li>
+      <li>Allowing medical+religious opt-outs requires ~<strong>${wtslMedRel.toFixed(2)}</strong> extra lives.</li>
+      <li>Permitting broad personal-belief exemptions needs ~<strong>${wtslAll.toFixed(2)}</strong> extra lives.</li>
+    </ul>
   `;
 }
 
@@ -185,9 +216,17 @@ function renderUptakeChart() {
     type: "doughnut",
     data: {
       labels: ["Uptake","Non-uptake"],
-      datasets: [{ data: [s.uptakePct,100-s.uptakePct], backgroundColor: ["#28a745","#dc3545"] }]
+      datasets: [{
+        data: [s.uptakePct, 100 - s.uptakePct],
+        backgroundColor: ["#28a745","#dc3545"]
+      }]
     },
-    options: { responsive:true, plugins:{ title:{ display:true, text:`Uptake Rate: ${s.uptakePct}%` } } }
+    options: {
+      responsive: true,
+      plugins: {
+        title: { display: true, text: `Uptake Rate: ${s.uptakePct}%` }
+      }
+    }
   });
 }
 
@@ -203,12 +242,12 @@ function renderCostsBenefits() {
       <p>${cur}${cb.fixedCost.toFixed(2)}</p>
     </div>
     <div class="card cost-card">
-      <h4>Variable Cost <i class="fa-solid fa-circle-info info-icon" title="Per-participant time, testing, staffing"></i></h4>
+      <h4>Variable Cost <i class="fa-solid fa-circle-info info-icon" title="Per-participant time, testing"></i></h4>
       <p>${cur}${cb.variableCost.toFixed(2)}</p>
     </div>
     <div class="card cost-card"><h4>Total Cost</h4><p>${cur}${cb.totalCost.toFixed(2)}</p></div>
     <div class="card cost-card">
-      <h4>Total Benefit <i class="fa-solid fa-circle-info info-icon" title="Avoided healthcare, QALY gains"></i></h4>
+      <h4>Total Benefit <i class="fa-solid fa-circle-info info-icon" title="Avoided healthcare costs, QALYs"></i></h4>
       <p>${cur}${cb.totalBenefit.toFixed(2)}</p>
     </div>
     <div class="card cost-card"><h4>Net Benefit</h4><p>${cur}${cb.netBenefit.toFixed(2)}</p></div>
@@ -217,28 +256,28 @@ function renderCostsBenefits() {
 
   const ctx2 = document.getElementById("combinedChart").getContext("2d");
   if (combinedChart) combinedChart.destroy();
-  combinedChart = new Chart(ctx2,{
-    type:"bar",
-    data:{
-      labels:["Cost","Benefit","Net"],
-      datasets:[{
-        label:cur,
-        data:[cb.totalCost, cb.totalBenefit, cb.netBenefit],
-        backgroundColor:["#FF4136","#2ECC40","#FFDC00"]
+  combinedChart = new Chart(ctx2, {
+    type: "bar",
+    data: {
+      labels: ["Cost","Benefit","Net"],
+      datasets: [{
+        label: cur,
+        data: [cb.totalCost, cb.totalBenefit, cb.netBenefit],
+        backgroundColor: ["#FF4136","#2ECC40","#FFDC00"]
       }]
     },
-    options:{ responsive:true }
+    options: { responsive: true }
   });
 }
 
-// Scenario saving & export
+// Scenario management
 let savedScenarios = [];
 function saveScenario() {
   const s = buildScenarioFromInputs();
   s.name = `Scenario ${savedScenarios.length+1}`;
   savedScenarios.push(s);
   const row = document.createElement("tr");
-  ["name","scopeText","exemptionText","coverageText","lives","uptakePct","netBenefit"].forEach(key=>{
+  ["name","scopeText","exemptionText","coverageText","lives","uptakePct","netBenefit"].forEach(key => {
     const td = document.createElement("td");
     td.textContent = key==="netBenefit"
       ? getCurrency(s.country) + s[key].toFixed(2)
