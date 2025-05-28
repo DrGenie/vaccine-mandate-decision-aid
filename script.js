@@ -29,16 +29,17 @@ function getCurrency(country) {
   return country === "Australia" ? "A$" : "€";
 }
 
-// ─── Updated EC-Logit Model Coefficients ─────────────────────────────
+// ─── EC-Logit Model Estimates ───────────────────────────────────────────────
 const vaxCoefficients = {
-  scopeAll:        -0.1059746,   // scope2
-  exemptionMedRel:  1.387549,    // exempt2
-  exemptionAll:     1.210117,    // exempt3
-  coverageModerate:-0.5271648,   // cov2
-  coverageHigh:    -0.30954,     // cov3
-  livesSavedCoeff:  0.1383641    // lives_cont
+  asc3:             5.727473,   // Alternative‐specific constant for choosing a mandate
+  scopeAll:        -0.1059746,
+  exemptionMedRel:  1.387549,
+  exemptionAll:     1.210117,
+  coverageModerate:-0.5271648,
+  coverageHigh:    -0.30954,
+  livesSavedCoeff:  0.1383641
 };
-// ────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────
 
 const colMultipliers = { Australia:1, France:0.95, Italy:0.9 };
 const costParams = {
@@ -87,8 +88,8 @@ function buildScenarioFromInputs() {
 
   const lives = parseInt(document.getElementById("livesSaved").value, 10);
 
-  // Utility calculation
-  let u = 0;
+  // Utility with ASC and attribute coefficients
+  let u = vaxCoefficients.asc3;
   if (scopeAll)              u += vaxCoefficients.scopeAll;
   if (exVal==="medRel")       u += vaxCoefficients.exemptionMedRel;
   if (exVal==="all")          u += vaxCoefficients.exemptionAll;
@@ -96,7 +97,8 @@ function buildScenarioFromInputs() {
   if (covVal==="90")          u += vaxCoefficients.coverageHigh;
   u += lives * vaxCoefficients.livesSavedCoeff;
 
-  const uptakeProb   = 1 / (1 + Math.exp(-u));
+  // Uptake probability with logistic
+  const uptakeProb   = Math.exp(u) / (1 + Math.exp(u));
   const uptakePct    = (uptakeProb * 100).toFixed(1);
   const participants = Math.round(uptakeProb * 2000);
   const costs        = computeCostBenefits(country, participants, adjustCOL);
@@ -122,7 +124,7 @@ function calculateScenario() {
     <p><strong>Exemption:</strong> ${s.exemptionText}</p>
     <p><strong>Coverage:</strong> ${s.coverageText}</p>
     <p><strong>Lives Saved:</strong> ${s.lives}</p>
-    <p><strong>Uptake:</strong> ${s.uptakePct}%</p>
+    <p><strong>Predicted Uptake:</strong> ${s.uptakePct}%</p>
     <p><strong>Participants:</strong> ${s.participants}</p>
     <p><strong>Net Benefit:</strong> ${cur}${s.netBenefit.toFixed(2)}</p>
   `;
@@ -136,8 +138,8 @@ function closeModal() {
 function showUptakeRecommendations() {
   const s = buildScenarioFromInputs();
   let rec = "<h4>Recommendations</h4>";
-  if (s.uptakePct < 40)      rec += "<p><strong>Low uptake:</strong> strengthen incentives & communication.</p>";
-  else if (s.uptakePct < 60) rec += "<p><strong>Moderate uptake:</strong> review coverage requirement.</p>";
+  if (s.uptakePct < 40)      rec += "<p><strong>Low uptake:</strong> strengthen communication & incentives.</p>";
+  else if (s.uptakePct < 60) rec += "<p><strong>Moderate uptake:</strong> review coverage thresholds.</p>";
   else                       rec += "<p><strong>High uptake:</strong> maintain policy and monitor.</p>";
   rec += `<p><strong>Participants:</strong> ${s.participants}</p>`;
   document.getElementById("uptakeResults").innerHTML = rec;
@@ -153,7 +155,7 @@ function renderWTSLChart() {
   const ctx = document.getElementById("wtslChart").getContext("2d");
   if (wtslChart) wtslChart.destroy();
 
-  // WTSL calculations
+  // WTSL = –(coef_attr)/(coef_lives)
   const wtsl70     = -vaxCoefficients.coverageModerate   / vaxCoefficients.livesSavedCoeff;
   const wtsl90     = -vaxCoefficients.coverageHigh       / vaxCoefficients.livesSavedCoeff;
   const wtslScope  = -vaxCoefficients.scopeAll           / vaxCoefficients.livesSavedCoeff;
@@ -167,11 +169,11 @@ function renderWTSLChart() {
         "Δ50→70% Coverage",
         "Δ50→90% Coverage",
         "Expand to All Occupations",
-        "Med+Rel Exemption",
-        "Broad Exemption"
+        "Add Med+Rel Exemption",
+        "Add Broad Exemption"
       ],
       datasets: [{
-        label: "Lives per 100k needed",
+        label: "Lives per 100k",
         data: [
           wtsl70.toFixed(2),
           wtsl90.toFixed(2),
@@ -196,14 +198,23 @@ function renderWTSLChart() {
     }
   });
 
+  // Intuitive explanations
   document.getElementById("wtslInfo").innerHTML = `
-    <p><strong>Intuitive Interpretations:</strong></p>
+    <p><strong>WTSL Interpretations:</strong></p>
     <ul>
-      <li>Raising coverage from 50% to 70% requires ~<strong>${wtsl70.toFixed(2)}</strong> extra lives per 100k.</li>
-      <li>Going from 50% to 90% needs ~<strong>${wtsl90.toFixed(2)}</strong> extra lives.</li>
-      <li>Expanding scope to everyone needs ~<strong>${wtslScope.toFixed(2)}</strong> extra lives.</li>
-      <li>Allowing medical+religious opt-outs requires ~<strong>${wtslMedRel.toFixed(2)}</strong> extra lives.</li>
-      <li>Permitting broad personal-belief exemptions needs ~<strong>${wtslAll.toFixed(2)}</strong> extra lives.</li>
+      <li><strong>Coverage 50→70%</strong>: needs <em>${wtsl70.toFixed(2)}</em> extra lives/100k to compensate.</li>
+      <li><strong>Coverage 50→90%</strong>: needs <em>${wtsl90.toFixed(2)}</em> extra lives/100k.</li>
+      <li><strong>Scope → All</strong>: needs <em>${wtslScope.toFixed(2)}</em> extra lives/100k.</li>
+      <li><strong>Add Med+Rel Exempt</strong>: 
+        ${wtslMedRel<0
+          ? `preferred outright (no extra lives needed)`
+          : `needs <em>${wtslMedRel.toFixed(2)}</em> extra lives/100k`}.
+      </li>
+      <li><strong>Add Broad Exempt</strong>: 
+        ${wtslAll<0
+          ? `preferred outright`
+          : `needs <em>${wtslAll.toFixed(2)}</em> extra lives/100k`}.
+      </li>
     </ul>
   `;
 }
@@ -224,21 +235,21 @@ function renderUptakeChart() {
     options: {
       responsive: true,
       plugins: {
-        title: { display: true, text: `Uptake Rate: ${s.uptakePct}%` }
+        title: { display: true, text: `Predicted Uptake: ${s.uptakePct}%` }
       }
     }
   });
 }
 
 function renderCostsBenefits() {
-  const s   = buildScenarioFromInputs();
-  const cur = getCurrency(s.country);
-  const cb  = computeCostBenefits(s.country, s.participants, document.getElementById("adjustCOL")?.value);
+  const s    = buildScenarioFromInputs();
+  const cur  = getCurrency(s.country);
+  const cb   = computeCostBenefits(s.country, s.participants, document.getElementById("adjustCOL")?.value);
 
   const container = document.getElementById("costsBenefitsResults");
   container.innerHTML = `
     <div class="card cost-card">
-      <h4>Fixed Cost <i class="fa-solid fa-circle-info info-icon" title="Administration, legal, monitoring"></i></h4>
+      <h4>Fixed Cost <i class="fa-solid fa-circle-info info-icon" title="Admin, legal, monitoring"></i></h4>
       <p>${cur}${cb.fixedCost.toFixed(2)}</p>
     </div>
     <div class="card cost-card">
@@ -247,7 +258,7 @@ function renderCostsBenefits() {
     </div>
     <div class="card cost-card"><h4>Total Cost</h4><p>${cur}${cb.totalCost.toFixed(2)}</p></div>
     <div class="card cost-card">
-      <h4>Total Benefit <i class="fa-solid fa-circle-info info-icon" title="Avoided healthcare costs, QALYs"></i></h4>
+      <h4>Total Benefit <i class="fa-solid fa-circle-info info-icon" title="Avoided healthcare costs & QALYs"></i></h4>
       <p>${cur}${cb.totalBenefit.toFixed(2)}</p>
     </div>
     <div class="card cost-card"><h4>Net Benefit</h4><p>${cur}${cb.netBenefit.toFixed(2)}</p></div>
@@ -294,7 +305,7 @@ function openComparison() {
   const doc = new jsPDF();
   let y = 20;
   doc.setFontSize(16).text("Scenario Comparison",105,10,{align:"center"});
-  savedScenarios.forEach((s,i)=>{
+  savedScenarios.forEach(s=>{
     doc.setFontSize(12).text(`${s.name}`,10,y); y+=6;
     doc.text(`Scope: ${s.scopeText}`,10,y); y+=5;
     doc.text(`Exemption: ${s.exemptionText}`,10,y); y+=5;
