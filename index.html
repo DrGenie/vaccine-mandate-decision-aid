@@ -14,12 +14,12 @@
 
     <header>
       <h1>Vaccine Mandate Decision Aid Tool</h1>
-      <p>Explore and compare vaccine mandate scenarios based on public preferences.</p>
+      <p>Explore and compare vaccine mandate scenarios based on public preferences (n = 322 pilot).</p>
     </header>
 
     <div class="instruction-banner card">
       <i class="fa-solid fa-circle-info info-icon" data-tooltip="Follow these steps to use the tool."></i>
-      <strong>How to Use:</strong> Go to <em>Inputs</em>, choose framing (mild vs severe), attribute levels, adjust “Lives Saved,” then click <em>Calculate</em>. See results in each tab. Save scenarios under <em>Scenarios</em>.
+      <strong>How to Use:</strong> In <em>Inputs</em>, select severity (pooled/mild/severe), attribute levels, and “Lives Saved.” Then click <em>Calculate</em>. Results appear in each tab. Save scenarios under <em>Scenarios</em>.
     </div>
 
     <nav class="tabs" role="tablist">
@@ -36,7 +36,7 @@
         Inputs
       </button>
       <button class="tablink" data-tab="wtslTab">
-        <i class="fa-solid fa-chart-bar info-icon" data-tooltip="Trade‐off in lives saved"></i>
+        <i class="fa-solid fa-chart-bar info-icon" data-tooltip="Trade-off in lives saved"></i>
         WTSL
       </button>
       <button class="tablink" data-tab="probTab">
@@ -44,7 +44,7 @@
         Uptake
       </button>
       <button class="tablink" data-tab="costsTab">
-        <i class="fa-solid fa-calculator info-icon" data-tooltip="Cost vs benefit"></i>
+        <i class="fa-solid fa-calculator info-icon" data-tooltip="Cost vs. benefit"></i>
         Costs &amp; Benefits
       </button>
       <button class="tablink" data-tab="scenariosTab">
@@ -60,7 +60,7 @@
           Introduction
           <i class="fa-solid fa-circle-info info-icon" data-tooltip="What this tool does"></i>
         </h2>
-        <p>This tool uses error component‐logit estimates for pooled, mild, or severe framings to model trade‐offs among four mandate attributes and estimate uptake, WTSL, and net benefits.</p>
+        <p>This tool applies your mixed-logit coefficients (pooled/mild/severe) from n = 322 pilot respondents to model how attribute changes—scope, exemption, coverage, lives saved—affect uptake, WTSL, and net benefits.</p>
       </div>
     </section>
 
@@ -99,7 +99,7 @@
         <div class="attribute-card card">
           <div class="attribute-icon">
             <i class="fa-solid fa-percentage"></i>
-            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Vaccination threshold for lifting mandates"></i>
+            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Vaccination threshold to lift mandates"></i>
           </div>
           <div class="attribute-content">
             <h4>Vaccine Coverage Requirement</h4>
@@ -110,11 +110,11 @@
         <div class="attribute-card card">
           <div class="attribute-icon">
             <i class="fa-solid fa-heart-pulse"></i>
-            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Continuous lives‐saved attribute"></i>
+            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Continuous lives-saved attribute"></i>
           </div>
           <div class="attribute-content">
             <h4>Estimated Lives Saved</h4>
-            <p>Continuous: number of lives saved per 100 000 population.</p>
+            <p>Continuous attribute: number of lives saved per 100 000 population.</p>
           </div>
         </div>
       </div>
@@ -125,14 +125,14 @@
       <div class="input-card card">
         <h2>
           Configure Scenario
-          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Select severity and attributes"></i>
+          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Select severity and attribute levels"></i>
         </h2>
         <form onsubmit="event.preventDefault();">
           <div class="input-cards">
             <!-- Severity -->
             <div class="input-level-card">
               <h3>Outbreak Severity</h3>
-              <p>(Select mild or severe)</p>
+              <p>(Pooled | Mild | Severe)</p>
               <select id="severitySelect">
                 <option value="pooled">Pooled</option>
                 <option value="mild">Mild</option>
@@ -173,6 +173,7 @@
             </button>
           </div>
         </form>
+
         <!-- Results Modal -->
         <div id="resultModal" class="modal">
           <div class="modal-content">
