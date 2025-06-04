@@ -1,4 +1,4 @@
-// scripttt.js
+// script.js
 
 document.addEventListener("DOMContentLoaded", () => {
   // Tab switching
@@ -29,9 +29,9 @@ function getCurrency(country) {
   return country === "Australia" ? "A$" : "€";
 }
 
-// ─── EC-Logit Model Estimates ───────────────────────────────────────────────
+// ─── EC-Logit Model Estimates (n=322 pilot) ─────────────────────────────────────
 const vaxCoefficients_pooled = {
-  asc3:             1.067346,   // pooled asc3
+  asc3:             1.067346,
   scopeAll:        -0.094717,
   exemptionMedRel: -0.052939,
   exemptionAll:    -0.1479027,
@@ -88,16 +88,16 @@ function computeCostBenefits(country, participants, adjustCOL) {
 function buildScenarioFromInputs() {
   const country     = document.getElementById("country_select")?.value || "Australia";
   const adjustCOL   = document.getElementById("adjustCOL")?.value   || "no";
-  const severityVal = document.getElementById("severitySelect").value; // pooled | mild | severe
+  const severityVal = document.getElementById("severitySelect").value; // "pooled" | "mild" | "severe"
 
-  // Choose coefficient set
+  // Choose the correct coefficient set
   let coeffs;
   if (severityVal === "mild") coeffs = vaxCoefficients_mild;
   else if (severityVal === "severe") coeffs = vaxCoefficients_severe;
   else coeffs = vaxCoefficients_pooled;
 
-  const scopeAll    = !!document.querySelector('input[name="scope"]:checked');
-  const scopeText   = scopeAll ? "All occupations & public spaces" : "High-risk occupations only";
+  const scopeAll  = !!document.querySelector('input[name="scope"]:checked');
+  const scopeText = scopeAll ? "All occupations & public spaces" : "High-risk occupations only";
 
   const exVal = document.querySelector('input[name="exemption"]:checked')?.value || "";
   const exemptionText =
@@ -113,7 +113,7 @@ function buildScenarioFromInputs() {
 
   const lives = parseInt(document.getElementById("livesSaved").value, 10);
 
-  // Utility = ASC3 + sum(attribute * coef) + lives*livesSavedCoef
+  // Compute utility: ASC3 + attribute×coef + lives×coef_lives
   let u = coeffs.asc3;
   if (scopeAll)              u += coeffs.scopeAll;
   if (exVal==="medRel")       u += coeffs.exemptionMedRel;
@@ -122,9 +122,10 @@ function buildScenarioFromInputs() {
   if (covVal==="90")          u += coeffs.coverageHigh;
   u += lives * coeffs.livesSavedCoeff;
 
-  // Uptake probability = exp(u)/(1+exp(u))
+  // Uptake probability (logistic): exp(u)/(1+exp(u))
   const uptakeProb   = Math.exp(u) / (1 + Math.exp(u));
   const uptakePct    = (uptakeProb * 100).toFixed(1);
+  // Now use n=322 pilot base for "participants"
   const participants = Math.round(uptakeProb * 322);
   const costs        = computeCostBenefits(country, participants, adjustCOL);
 
@@ -152,7 +153,7 @@ function calculateScenario() {
     <p><strong>Coverage:</strong> ${s.coverageText}</p>
     <p><strong>Lives Saved:</strong> ${s.lives}</p>
     <p><strong>Predicted Uptake:</strong> ${s.uptakePct}%</p>
-    <p><strong>Participants:</strong> ${s.participants}</p>
+    <p><strong>Participants (out of 322):</strong> ${s.participants}</p>
     <p><strong>Net Benefit:</strong> ${cur}${s.netBenefit.toFixed(2)}</p>
   `;
   document.getElementById("modalResults").innerHTML = html;
@@ -168,7 +169,7 @@ function showUptakeRecommendations() {
   if (s.uptakePct < 40)      rec += "<p><strong>Low uptake:</strong> strengthen communication & incentives.</p>";
   else if (s.uptakePct < 60) rec += "<p><strong>Moderate uptake:</strong> review coverage thresholds.</p>";
   else                       rec += "<p><strong>High uptake:</strong> maintain policy and monitor.</p>";
-  rec += `<p><strong>Participants:</strong> ${s.participants}</p>`;
+  rec += `<p><strong>Participants (out of 322):</strong> ${s.participants}</p>`;
   document.getElementById("uptakeResults").innerHTML = rec;
   document.getElementById("uptakeModal").style.display = "block";
 }
@@ -179,7 +180,7 @@ function closeUptakeModal() {
 let wtslChart, uptakeChart, combinedChart;
 
 function renderWTSLChart() {
-  // Determine coeffs by severity again
+  // Re-select coefficients by chosen severity
   const severityVal = document.getElementById("severitySelect").value;
   let coeffs;
   if (severityVal === "mild") coeffs = vaxCoefficients_mild;
@@ -227,28 +228,27 @@ function renderWTSLChart() {
         }
       },
       plugins: {
-        title: { display: true, text: "Willingness to Save Lives (WTSL)" }
+        title: { display: true, text: `Willingness to Save Lives (WTSL) – ${severityVal.charAt(0).toUpperCase()+severityVal.slice(1)}` }
       }
     }
   });
 
-  // Intuitive WTSL interpretations
   document.getElementById("wtslInfo").innerHTML = `
-    <p><strong>WTSL Interpretations (Severity: ${severityVal.charAt(0).toUpperCase()+severityVal.slice(1)}):</strong></p>
+    <p><strong>WTSL Interpretations (Severity: ${severityVal.charAt(0).toUpperCase() + severityVal.slice(1)}):</strong></p>
     <ul>
-      <li><strong>50→70% Coverage</strong>: needs ~<em>${wtsl70.toFixed(2)}</em> extra lives per 100 000 to compensate.</li>
-      <li><strong>50→90% Coverage</strong>: needs ~<em>${wtsl90.toFixed(2)}</em> extra lives.</li>
-      <li><strong>Expand to All Occupations</strong>: needs ~<em>${wtslScope.toFixed(2)}</em> extra lives.</li>
-      <li><strong>Add Med+Rel Exemption</strong>: 
-        ${wtslMedRel >= 0
-          ? `needs ~<em>${wtslMedRel.toFixed(2)}</em> extra lives per 100 000.`
-          : `no extra lives needed (preferred).`}
-      </li>
-      <li><strong>Add Broad Exemption</strong>: 
-        ${wtslAll >= 0
-          ? `needs ~<em>${wtslAll.toFixed(2)}</em> extra lives per 100 000.`
-          : `no extra lives needed (preferred).`}
-      </li>
+      <li><strong>50→70% Coverage:</strong> Requires ~<em>${wtsl70.toFixed(2)}</em> extra lives/100k to maintain utility.</li>
+      <li><strong>50→90% Coverage:</strong> Requires ~<em>${wtsl90.toFixed(2)}</em> extra lives/100k.</li>
+      <li><strong>Expand to All Occupations:</strong> Requires ~<em>${wtslScope.toFixed(2)}</em> extra lives/100k.</li>
+      <li><strong>Add Med+Rel Exemption:</strong> ${
+        wtslMedRel >= 0
+          ? `Requires ~<em>${wtslMedRel.toFixed(2)}</em> extra lives/100k.`
+          : `No extra lives needed (preferred).`
+      }</li>
+      <li><strong>Add Broad Exemption:</strong> ${
+        wtslAll >= 0
+          ? `Requires ~<em>${wtslAll.toFixed(2)}</em> extra lives/100k.`
+          : `No extra lives needed (preferred).`
+      }</li>
     </ul>
   `;
 }
