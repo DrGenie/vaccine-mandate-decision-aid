@@ -30,16 +30,34 @@ function getCurrency(country) {
 }
 
 // ─── EC-Logit Model Estimates ───────────────────────────────────────────────
-const vaxCoefficients = {
-  asc3:             5.727473,   // Alternative‐specific constant for choosing a mandate
-  scopeAll:        -0.1059746,
-  exemptionMedRel:  1.387549,
-  exemptionAll:     1.210117,
-  coverageModerate:-0.5271648,
-  coverageHigh:    -0.30954,
-  livesSavedCoeff:  0.1383641
+const vaxCoefficients_pooled = {
+  asc3:             1.067346,   // pooled asc3
+  scopeAll:        -0.094717,
+  exemptionMedRel: -0.052939,
+  exemptionAll:    -0.1479027,
+  coverageModerate: 0.0929465,
+  coverageHigh:     0.0920977,
+  livesSavedCoeff:  0.0445604
 };
-// ───────────────────────────────────────────────────────────────────────────
+const vaxCoefficients_mild = {
+  asc3:             0.9855033,
+  scopeAll:        -0.1689361,
+  exemptionMedRel: -0.0376554,
+  exemptionAll:    -0.1753159,
+  coverageModerate: 0.1245323,
+  coverageHigh:     0.0662936,
+  livesSavedCoeff:  0.0412682
+};
+const vaxCoefficients_severe = {
+  asc3:             1.154312,
+  scopeAll:        -0.0204815,
+  exemptionMedRel: -0.0681409,
+  exemptionAll:    -0.1219056,
+  coverageModerate: 0.0610344,
+  coverageHigh:     0.116988,
+  livesSavedCoeff:  0.0480637
+};
+// ────────────────────────────────────────────────────────────────────────────
 
 const colMultipliers = { Australia:1, France:0.95, Italy:0.9 };
 const costParams = {
@@ -68,11 +86,18 @@ function computeCostBenefits(country, participants, adjustCOL) {
 }
 
 function buildScenarioFromInputs() {
-  const country   = document.getElementById("country_select")?.value || "Australia";
-  const adjustCOL = document.getElementById("adjustCOL")?.value   || "no";
+  const country     = document.getElementById("country_select")?.value || "Australia";
+  const adjustCOL   = document.getElementById("adjustCOL")?.value   || "no";
+  const severityVal = document.getElementById("severitySelect").value; // pooled | mild | severe
 
-  const scopeAll  = !!document.querySelector('input[name="scope"]:checked');
-  const scopeText = scopeAll ? "All occupations & public spaces" : "High-risk occupations only";
+  // Choose coefficient set
+  let coeffs;
+  if (severityVal === "mild") coeffs = vaxCoefficients_mild;
+  else if (severityVal === "severe") coeffs = vaxCoefficients_severe;
+  else coeffs = vaxCoefficients_pooled;
+
+  const scopeAll    = !!document.querySelector('input[name="scope"]:checked');
+  const scopeText   = scopeAll ? "All occupations & public spaces" : "High-risk occupations only";
 
   const exVal = document.querySelector('input[name="exemption"]:checked')?.value || "";
   const exemptionText =
@@ -88,16 +113,16 @@ function buildScenarioFromInputs() {
 
   const lives = parseInt(document.getElementById("livesSaved").value, 10);
 
-  // Utility with ASC and attribute coefficients
-  let u = vaxCoefficients.asc3;
-  if (scopeAll)              u += vaxCoefficients.scopeAll;
-  if (exVal==="medRel")       u += vaxCoefficients.exemptionMedRel;
-  if (exVal==="all")          u += vaxCoefficients.exemptionAll;
-  if (covVal==="70")          u += vaxCoefficients.coverageModerate;
-  if (covVal==="90")          u += vaxCoefficients.coverageHigh;
-  u += lives * vaxCoefficients.livesSavedCoeff;
+  // Utility = ASC3 + sum(attribute * coef) + lives*livesSavedCoef
+  let u = coeffs.asc3;
+  if (scopeAll)              u += coeffs.scopeAll;
+  if (exVal==="medRel")       u += coeffs.exemptionMedRel;
+  if (exVal==="all")          u += coeffs.exemptionAll;
+  if (covVal==="70")          u += coeffs.coverageModerate;
+  if (covVal==="90")          u += coeffs.coverageHigh;
+  u += lives * coeffs.livesSavedCoeff;
 
-  // Uptake probability with logistic
+  // Uptake probability = exp(u)/(1+exp(u))
   const uptakeProb   = Math.exp(u) / (1 + Math.exp(u));
   const uptakePct    = (uptakeProb * 100).toFixed(1);
   const participants = Math.round(uptakeProb * 2000);
@@ -105,6 +130,7 @@ function buildScenarioFromInputs() {
 
   return {
     country,
+    severity: severityVal.charAt(0).toUpperCase() + severityVal.slice(1),
     scopeText,
     exemptionText,
     coverageText,
@@ -120,6 +146,7 @@ function calculateScenario() {
   const cur = getCurrency(s.country);
   const html = `
     <h4>Scenario Results</h4>
+    <p><strong>Severity:</strong> ${s.severity}</p>
     <p><strong>Scope:</strong> ${s.scopeText}</p>
     <p><strong>Exemption:</strong> ${s.exemptionText}</p>
     <p><strong>Coverage:</strong> ${s.coverageText}</p>
@@ -152,15 +179,22 @@ function closeUptakeModal() {
 let wtslChart, uptakeChart, combinedChart;
 
 function renderWTSLChart() {
+  // Determine coeffs by severity again
+  const severityVal = document.getElementById("severitySelect").value;
+  let coeffs;
+  if (severityVal === "mild") coeffs = vaxCoefficients_mild;
+  else if (severityVal === "severe") coeffs = vaxCoefficients_severe;
+  else coeffs = vaxCoefficients_pooled;
+
   const ctx = document.getElementById("wtslChart").getContext("2d");
   if (wtslChart) wtslChart.destroy();
 
   // WTSL = –(coef_attr)/(coef_lives)
-  const wtsl70     = -vaxCoefficients.coverageModerate   / vaxCoefficients.livesSavedCoeff;
-  const wtsl90     = -vaxCoefficients.coverageHigh       / vaxCoefficients.livesSavedCoeff;
-  const wtslScope  = -vaxCoefficients.scopeAll           / vaxCoefficients.livesSavedCoeff;
-  const wtslMedRel = -vaxCoefficients.exemptionMedRel    / vaxCoefficients.livesSavedCoeff;
-  const wtslAll    = -vaxCoefficients.exemptionAll       / vaxCoefficients.livesSavedCoeff;
+  const wtsl70     = -coeffs.coverageModerate   / coeffs.livesSavedCoeff;
+  const wtsl90     = -coeffs.coverageHigh       / coeffs.livesSavedCoeff;
+  const wtslScope  = -coeffs.scopeAll           / coeffs.livesSavedCoeff;
+  const wtslMedRel = -coeffs.exemptionMedRel    / coeffs.livesSavedCoeff;
+  const wtslAll    = -coeffs.exemptionAll       / coeffs.livesSavedCoeff;
 
   wtslChart = new Chart(ctx, {
     type: "bar",
@@ -198,22 +232,22 @@ function renderWTSLChart() {
     }
   });
 
-  // Intuitive explanations
+  // Intuitive WTSL interpretations
   document.getElementById("wtslInfo").innerHTML = `
-    <p><strong>WTSL Interpretations:</strong></p>
+    <p><strong>WTSL Interpretations (Severity: ${severityVal.charAt(0).toUpperCase()+severityVal.slice(1)}):</strong></p>
     <ul>
-      <li><strong>Coverage 50→70%</strong>: needs <em>${wtsl70.toFixed(2)}</em> extra lives/100k to compensate.</li>
-      <li><strong>Coverage 50→90%</strong>: needs <em>${wtsl90.toFixed(2)}</em> extra lives/100k.</li>
-      <li><strong>Scope → All</strong>: needs <em>${wtslScope.toFixed(2)}</em> extra lives/100k.</li>
-      <li><strong>Add Med+Rel Exempt</strong>: 
-        ${wtslMedRel<0
-          ? `preferred outright (no extra lives needed)`
-          : `needs <em>${wtslMedRel.toFixed(2)}</em> extra lives/100k`}.
+      <li><strong>50→70% Coverage</strong>: needs ~<em>${wtsl70.toFixed(2)}</em> extra lives per 100 000 to compensate.</li>
+      <li><strong>50→90% Coverage</strong>: needs ~<em>${wtsl90.toFixed(2)}</em> extra lives.</li>
+      <li><strong>Expand to All Occupations</strong>: needs ~<em>${wtslScope.toFixed(2)}</em> extra lives.</li>
+      <li><strong>Add Med+Rel Exemption</strong>: 
+        ${wtslMedRel >= 0
+          ? `needs ~<em>${wtslMedRel.toFixed(2)}</em> extra lives per 100 000.`
+          : `no extra lives needed (preferred).`}
       </li>
-      <li><strong>Add Broad Exempt</strong>: 
-        ${wtslAll<0
-          ? `preferred outright`
-          : `needs <em>${wtslAll.toFixed(2)}</em> extra lives/100k`}.
+      <li><strong>Add Broad Exemption</strong>: 
+        ${wtslAll >= 0
+          ? `needs ~<em>${wtslAll.toFixed(2)}</em> extra lives per 100 000.`
+          : `no extra lives needed (preferred).`}
       </li>
     </ul>
   `;
@@ -249,7 +283,7 @@ function renderCostsBenefits() {
   const container = document.getElementById("costsBenefitsResults");
   container.innerHTML = `
     <div class="card cost-card">
-      <h4>Fixed Cost <i class="fa-solid fa-circle-info info-icon" title="Admin, legal, monitoring"></i></h4>
+      <h4>Fixed Cost <i class="fa-solid fa-circle-info info-icon" title="Administration, legal, monitoring"></i></h4>
       <p>${cur}${cb.fixedCost.toFixed(2)}</p>
     </div>
     <div class="card cost-card">
@@ -288,9 +322,9 @@ function saveScenario() {
   s.name = `Scenario ${savedScenarios.length+1}`;
   savedScenarios.push(s);
   const row = document.createElement("tr");
-  ["name","scopeText","exemptionText","coverageText","lives","uptakePct","netBenefit"].forEach(key => {
+  ["name","severity","scopeText","exemptionText","coverageText","lives","uptakePct","netBenefit"].forEach(key => {
     const td = document.createElement("td");
-    td.textContent = key==="netBenefit"
+    td.textContent = (key==="netBenefit")
       ? getCurrency(s.country) + s[key].toFixed(2)
       : s[key];
     row.appendChild(td);
@@ -306,7 +340,7 @@ function openComparison() {
   let y = 20;
   doc.setFontSize(16).text("Scenario Comparison",105,10,{align:"center"});
   savedScenarios.forEach(s=>{
-    doc.setFontSize(12).text(`${s.name}`,10,y); y+=6;
+    doc.setFontSize(12).text(`${s.name} (Severity: ${s.severity})`,10,y); y+=6;
     doc.text(`Scope: ${s.scopeText}`,10,y); y+=5;
     doc.text(`Exemption: ${s.exemptionText}`,10,y); y+=5;
     doc.text(`Coverage: ${s.coverageText}`,10,y); y+=5;
@@ -320,10 +354,11 @@ function openComparison() {
 
 function downloadCSV() {
   if (!savedScenarios.length) return alert("No scenarios saved.");
-  let csv = "Name,Scope,Exemption,Coverage,Lives,Uptake%,NetBenefit\n";
+  let csv = "Name,Severity,Scope,Exemption,Coverage,Lives,Uptake%,NetBenefit\n";
   savedScenarios.forEach(s => {
     csv += [
       s.name,
+      s.severity,
       s.scopeText,
       s.exemptionText,
       s.coverageText,
