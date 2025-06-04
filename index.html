@@ -18,8 +18,8 @@
     </header>
 
     <div class="instruction-banner card">
-      <i class="fa-solid fa-circle-info info-icon" data-tooltip="Follow these steps to use the tool effectively."></i>
-      <strong>How to Use:</strong> Switch to <em>Inputs</em>, select attribute levels, adjust “Lives Saved” slider, then click <em>Calculate</em> to view results. Save scenarios under <em>Scenarios</em>.
+      <i class="fa-solid fa-circle-info info-icon" data-tooltip="Follow these steps to use the tool."></i>
+      <strong>How to Use:</strong> Go to <em>Inputs</em>, choose severity, attribute levels, adjust “Lives Saved,” then click <em>Calculate</em>. See results in each tab. Save scenarios under <em>Scenarios</em>.
     </div>
 
     <nav class="tabs" role="tablist">
@@ -40,11 +40,11 @@
         WTSL
       </button>
       <button class="tablink" data-tab="probTab">
-        <i class="fa-solid fa-chart-pie info-icon" data-tooltip="Predicted uptake pie chart"></i>
+        <i class="fa-solid fa-chart-pie info-icon" data-tooltip="Predicted uptake"></i>
         Uptake
       </button>
       <button class="tablink" data-tab="costsTab">
-        <i class="fa-solid fa-calculator info-icon" data-tooltip="Detailed cost vs benefit"></i>
+        <i class="fa-solid fa-calculator info-icon" data-tooltip="Cost vs benefit"></i>
         Costs &amp; Benefits
       </button>
       <button class="tablink" data-tab="scenariosTab">
@@ -60,7 +60,7 @@
           Introduction
           <i class="fa-solid fa-circle-info info-icon" data-tooltip="What this tool does"></i>
         </h2>
-        <p>This tool uses DCE‐based coefficients to model trade‐offs among four mandate attributes and estimate uptake, willingness to save lives (WTSL), and net benefits.</p>
+        <p>This tool uses mixed‐logit estimates for pooled, mild, or severe scenarios to model trade‐offs among four mandate attributes and estimate uptake, WTSL, and net benefits.</p>
       </div>
     </section>
 
@@ -71,7 +71,6 @@
         <i class="fa-solid fa-circle-info info-icon" data-tooltip="Descriptions and reference levels"></i>
       </h2>
       <div class="attributes-list">
-        <!-- Scope -->
         <div class="attribute-card card">
           <div class="attribute-icon">
             <i class="fa-solid fa-users"></i>
@@ -83,7 +82,6 @@
             <p><strong>Alternative:</strong> All occupations & public spaces</p>
           </div>
         </div>
-        <!-- Exemption -->
         <div class="attribute-card card">
           <div class="attribute-icon">
             <i class="fa-solid fa-user-shield"></i>
@@ -98,11 +96,10 @@
             </ul>
           </div>
         </div>
-        <!-- Coverage -->
         <div class="attribute-card card">
           <div class="attribute-icon">
             <i class="fa-solid fa-percentage"></i>
-            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Vaccination threshold to lift mandates"></i>
+            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Vaccination threshold for lifting mandates"></i>
           </div>
           <div class="attribute-content">
             <h4>Vaccine Coverage Requirement</h4>
@@ -110,7 +107,6 @@
             <p><strong>Alternatives:</strong> 70%, 90%</p>
           </div>
         </div>
-        <!-- Lives Saved -->
         <div class="attribute-card card">
           <div class="attribute-icon">
             <i class="fa-solid fa-heart-pulse"></i>
@@ -118,7 +114,7 @@
           </div>
           <div class="attribute-content">
             <h4>Estimated Lives Saved</h4>
-            <p>Continuous attribute: number of lives saved per 100 000 population.</p>
+            <p>Continuous: number of lives saved per 100 000 population.</p>
           </div>
         </div>
       </div>
@@ -129,27 +125,41 @@
       <div class="input-card card">
         <h2>
           Configure Scenario
-          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Select your scenario settings"></i>
+          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Select severity and attributes"></i>
         </h2>
         <form onsubmit="event.preventDefault();">
           <div class="input-cards">
+            <!-- Severity -->
+            <div class="input-level-card">
+              <h3>Outbreak Severity</h3>
+              <p>(Select mild or severe)</p>
+              <select id="severitySelect">
+                <option value="pooled">Pooled</option>
+                <option value="mild">Mild</option>
+                <option value="severe">Severe</option>
+              </select>
+            </div>
+            <!-- Scope -->
             <div class="input-level-card">
               <h3>Scope</h3>
               <p>(Ref: High-risk occupations only)</p>
               <label><input type="radio" name="scope" value="all"> All occupations & public spaces</label>
             </div>
+            <!-- Exemption -->
             <div class="input-level-card">
               <h3>Exemption</h3>
               <p>(Ref: Medical only)</p>
               <label><input type="radio" name="exemption" value="medRel"> Medical + religious</label>
               <label><input type="radio" name="exemption" value="all"> Med+religious+personal</label>
             </div>
+            <!-- Coverage -->
             <div class="input-level-card">
               <h3>Coverage</h3>
               <p>(Ref: 50%)</p>
               <label><input type="radio" name="coverage" value="70"> 70%</label>
               <label><input type="radio" name="coverage" value="90"> 90%</label>
             </div>
+            <!-- Lives Saved -->
             <div class="input-level-card">
               <h3>Lives Saved</h3>
               <input type="range" id="livesSaved" min="10" max="40" step="5" value="25"
@@ -235,8 +245,7 @@
           <table id="scenarioTable">
             <thead>
               <tr>
-                <th>Name</th><th>Scope</th><th>Exemption</th><th>Coverage</th>
-                <th>Lives</th><th>Uptake%</th><th>Net Benefit</th>
+                <th>Name</th><th>Severity</th><th>Scope</th><th>Exemption</th><th>Coverage</th><th>Lives</th><th>Uptake%</th><th>Net Benefit</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -245,9 +254,7 @@
       </div>
     </section>
 
-    <footer>
-      <p>&copy; 2025 NBS Vaccine Mandate Tool</p>
-    </footer>
+    <footer><p>&copy; 2025 Vaccine Mandate Tool</p></footer>
   </div>
 
   <script src="script.js"></script>
