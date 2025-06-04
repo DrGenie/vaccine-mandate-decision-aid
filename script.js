@@ -1,4 +1,4 @@
-// scripptt.js
+// scripptat.js
 
 document.addEventListener("DOMContentLoaded", () => {
   // Tab switching
