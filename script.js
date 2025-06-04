@@ -125,7 +125,7 @@ function buildScenarioFromInputs() {
   // Uptake probability = exp(u)/(1+exp(u))
   const uptakeProb   = Math.exp(u) / (1 + Math.exp(u));
   const uptakePct    = (uptakeProb * 100).toFixed(1);
-  const participants = Math.round(uptakeProb * 2000);
+  const participants = Math.round(uptakeProb * 322);
   const costs        = computeCostBenefits(country, participants, adjustCOL);
 
   return {
