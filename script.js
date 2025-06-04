@@ -1,4 +1,4 @@
-// script.js
+// scriptt.js
 
 document.addEventListener("DOMContentLoaded", () => {
   // Tab switching
