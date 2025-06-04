@@ -1,4 +1,4 @@
-/* styles.csss */
+/* styles.css */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: "Segoe UI", sans-serif; background: #f0f2f5; color: #333; }
 .container { max-width: 1100px; margin: 20px auto; background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
@@ -62,12 +62,7 @@ header p { text-align: center; color: #7f8c8d; margin-bottom: 15px; }
   width: 180px;
   text-align: left;
 }
-.attribute-icon:hover .tooltip,
-.instruction-banner .info-icon:hover ~ .tooltip,
-.tabs .info-icon:hover + .tooltip {
-  visibility: visible;
-  opacity: 1;
-}
+.attribute-icon:hover .tooltip { visibility: visible; opacity: 1; }
 
 .input-cards { display: flex; flex-wrap: wrap; gap: 16px; }
 .input-level-card {
