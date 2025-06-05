@@ -5,258 +5,198 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vaccine Mandate Decision Aid Tool</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
-
     <header>
       <h1>Vaccine Mandate Decision Aid Tool</h1>
-      <p>Apply your mixed‐logit coefficients (n = 322 pilot) to compare policy scenarios.</p>
+      <p>This tool helps you explore how vaccine mandate policies affect public acceptance and costs, using data from a survey of 322 people.</p>
     </header>
 
     <div class="instruction-banner card">
-      <i class="fa-solid fa-circle-info info-icon" data-tooltip="Follow these steps carefully."></i>
-      <strong>How to Use:</strong> In <em>Inputs</em>, select severity (Mild/Severe), attribute levels, and “Lives Saved.” Click <em>Calculate</em> to see dynamic results. Visit <em>Costs & Benefits</em> for a detailed CBA using QALYs, then save scenarios under <em>Scenarios</em>.
+      <i class="fa-solid fa-circle-info info-icon" title="Follow these steps to use the tool"></i>
+      <strong>How to Use:</strong> Choose settings in <em>Inputs</em>, click <em>Calculate</em> to see results, review <em>Costs & Benefits</em>, and save scenarios in <em>Scenarios</em>.
     </div>
 
     <nav class="tabs" role="tablist">
-      <button class="tablink active" data-tab="introTab">
-        <i class="fa-solid fa-info-circle info-icon" data-tooltip="Overview of this tool"></i>
-        Introduction
-      </button>
-      <button class="tablink" data-tab="attributesTab">
-        <i class="fa-solid fa-list info-icon" data-tooltip="Attribute definitions"></i>
-        Attributes
-      </button>
-      <button class="tablink" data-tab="inputsTab">
-        <i class="fa-solid fa-sliders info-icon" data-tooltip="Configure scenario"></i>
-        Inputs
-      </button>
-      <button class="tablink" data-tab="wtslTab">
-        <i class="fa-solid fa-chart-bar info-icon" data-tooltip="Interpret WTSL"></i>
-        WTSL
-      </button>
-      <button class="tablink" data-tab="probTab">
-        <i class="fa-solid fa-chart-pie info-icon" data-tooltip="Predicted uptake"></i>
-        Uptake
-      </button>
-      <button class="tablink" data-tab="costsTab">
-        <i class="fa-solid fa-calculator info-icon" data-tooltip="Detailed cost–benefit analysis"></i>
-        Costs &amp; Benefits
-      </button>
-      <button class="tablink" data-tab="scenariosTab">
-        <i class="fa-solid fa-folder-open info-icon" data-tooltip="Save & compare scenarios"></i>
-        Scenarios
-      </button>
+      <button class="tablink active" data-tab="introTab"><i class="fa-solid fa-info-circle info-icon" title="Tool overview"></i> Introduction</button>
+      <button class="tablink" data-tab="attributesTab"><i class="fa-solid fa-list info-icon" title="Policy attributes"></i> Attributes</button>
+      <button class="tablink" data-tab="inputsTab"><i class="fa-solid fa-sliders info-icon" title="Configure policy"></i> Inputs</button>
+      <button class="tablink" data-tab="wtslTab"><i class="fa-solid fa-chart-bar info-icon" title="Willingness to save lives"></i> WTSL</button>
+      <button class="tablink" data-tab="probTab"><i class="fa-solid fa-chart-pie info-icon" title="Predicted acceptance"></i> Uptake</button>
+      <button class="tablink" data-tab="costsTab"><i class="fa-solid fa-calculator info-icon" title="Cost-benefit analysis"></i> Costs & Benefits</button>
+      <button class="tablink" data-tab="scenariosTab"><i class="fa-solid fa-folder-open info-icon" title="Saved scenarios"></i> Scenarios</button>
+      <button class="tablink" data-tab="glossaryTab"><i class="fa-solid fa-book info-icon" title="Key terms"></i> Glossary</button>
     </nav>
 
-    <!-- Introduction Tab -->
-    <section id="introTab" class="tabcontent" style="display:block;">
+    <section id="introTab" class="tabcontent active">
       <div class="intro-box card">
-        <h2>
-          Introduction
-          <i class="fa-solid fa-circle-info info-icon" data-tooltip="What this tool does"></i>
-        </h2>
-        <p>This tool uses mixed‐logit coefficients (pooled/mild/severe) from a pilot (n = 322) to model how changes in mandate scope, exemptions, coverage, and lives saved influence (1) uptake probability, (2) willingness to save lives (WTSL), and (3) a full cost–benefit analysis using QALYs and realistic cost components.</p>
+        <h2>Introduction <i class="fa-solid fa-circle-info info-icon" title="What this tool does"></i></h2>
+        <p>This tool helps you understand how different vaccine mandate policies might be received by the public and what their costs and benefits might be. It uses data from a survey of 322 people to predict acceptance rates and calculates costs and benefits based on realistic estimates.</p>
       </div>
     </section>
 
-    <!-- Attributes Tab -->
     <section id="attributesTab" class="tabcontent">
-      <h2>
-        Key Mandate Attributes
-        <i class="fa-solid fa-circle-info info-icon" data-tooltip="Descriptions & references"></i>
-      </h2>
+      <h2>Key Policy Attributes <i class="fa-solid fa-circle-info info-icon" title="What each setting means"></i></h2>
       <div class="attributes-list">
         <div class="attribute-card card">
-          <div class="attribute-icon">
-            <i class="fa-solid fa-users"></i>
-            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Who must be vaccinated?"></i>
-          </div>
+          <div class="attribute-icon"><i class="fa-solid fa-users"></i></div>
           <div class="attribute-content">
             <h4>Scope of the Mandate</h4>
-            <p><strong>Reference:</strong> High-risk occupations only</p>
-            <p><strong>Alternative:</strong> All occupations & public spaces</p>
+            <p><strong>Default:</strong> High-risk occupations only (e.g., healthcare workers).</p>
+            <p><strong>Alternative:</strong> All occupations and public spaces.</p>
           </div>
         </div>
         <div class="attribute-card card">
-          <div class="attribute-icon">
-            <i class="fa-solid fa-user-shield"></i>
-            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Who can opt out and why?"></i>
-          </div>
+          <div class="attribute-icon"><i class="fa-solid fa-user-shield"></i></div>
           <div class="attribute-content">
             <h4>Exemption Policy</h4>
-            <p><strong>Reference:</strong> Medical only</p>
+            <p><strong>Default:</strong> Medical only.</p>
             <ul>
               <li>Medical + religious</li>
-              <li>Medical, religious + broad personal beliefs</li>
+              <li>Medical + religious + personal beliefs</li>
             </ul>
           </div>
         </div>
         <div class="attribute-card card">
-          <div class="attribute-icon">
-            <i class="fa-solid fa-percentage"></i>
-            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Vaccination threshold needed to lift mandates"></i>
-          </div>
+          <div class="attribute-icon"><i class="fa-solid fa-percentage"></i></div>
           <div class="attribute-content">
             <h4>Vaccine Coverage Requirement</h4>
-            <p><strong>Reference:</strong> 50%</p>
+            <p><strong>Default:</strong> 50%</p>
             <p><strong>Alternatives:</strong> 70%, 90%</p>
           </div>
         </div>
         <div class="attribute-card card">
-          <div class="attribute-icon">
-            <i class="fa-solid fa-heart-pulse"></i>
-            <i class="fa-solid fa-info-circle info-icon" data-tooltip="Number of lives saved per 100k population"></i>
-          </div>
+          <div class="attribute-icon"><i class="fa-solid fa-heart-pulse"></i></div>
           <div class="attribute-content">
             <h4>Estimated Lives Saved</h4>
-            <p>Continuous: number of lives saved per 100 000 population due to the mandate.</p>
+            <p>Number of lives saved per 100,000 population due to the mandate.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Inputs Tab -->
     <section id="inputsTab" class="tabcontent">
       <div class="input-card card">
-        <h2>
-          Configure Scenario
-          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Select severity and attribute levels"></i>
-        </h2>
+        <h2>Configure Policy <i class="fa-solid fa-circle-info info-icon" title="Choose policy settings"></i></h2>
         <form onsubmit="event.preventDefault();">
           <div class="input-cards">
-            <!-- Severity -->
+            <div class="input-level-card">
+              <h3>Country</h3>
+              <select id="country_select">
+                <option value="Australia">Australia</option>
+                <option value="France">France</option>
+                <option value="Italy">Italy</option>
+              </select>
+            </div>
             <div class="input-level-card">
               <h3>Outbreak Severity</h3>
-              <p>(Pooled | Mild | Severe)</p>
               <select id="severitySelect">
                 <option value="pooled">Pooled</option>
                 <option value="mild">Mild</option>
                 <option value="severe">Severe</option>
               </select>
-              <p class="small-text">Use pooled if you want overall pilot coefficients. Otherwise pick mild or severe.</p>
+              <p class="small-text">Use pooled for overall data, mild for less severe outbreaks, severe for more severe.</p>
             </div>
-            <!-- Scope -->
             <div class="input-level-card">
               <h3>Scope</h3>
-              <p>(Reference: High-risk only)</p>
               <label><input type="radio" name="scope" value="all"> All occupations & public spaces</label>
+              <p class="small-text">Default is high-risk occupations only.</p>
             </div>
-            <!-- Exemption -->
             <div class="input-level-card">
               <h3>Exemption</h3>
-              <p>(Reference: Medical only)</p>
               <label><input type="radio" name="exemption" value="medRel"> Medical + religious</label>
               <label><input type="radio" name="exemption" value="all"> Medical + religious + personal</label>
+              <p class="small-text">Default is medical only.</p>
             </div>
-            <!-- Coverage -->
             <div class="input-level-card">
               <h3>Coverage</h3>
-              <p>(Reference: 50%)</p>
               <label><input type="radio" name="coverage" value="70"> 70%</label>
               <label><input type="radio" name="coverage" value="90"> 90%</label>
+              <p class="small-text">Default is 50%.</p>
             </div>
-            <!-- Lives Saved -->
             <div class="input-level-card">
               <h3>Lives Saved</h3>
               <input type="range" id="livesSaved" min="10" max="40" step="5" value="25"
                      oninput="document.getElementById('livesSavedValue').textContent=this.value" />
-              <p><strong><span id="livesSavedValue">25</span></strong> per 100 000</p>
-              <p class="small-text">Move the slider to adjust the continuous “lives saved” attribute.</p>
+              <p><strong><span id="livesSavedValue">25</span></strong> per 100,000</p>
+            </div>
+            <div class="input-level-card">
+              <h3>Preset Scenarios</h3>
+              <button type="button" onclick="loadPreset('current')">Current Policy</button>
+              <button type="button" onclick="loadPreset('expanded')">Expanded Mandate</button>
+              <button type="button" onclick="loadPreset('relaxed')">Relaxed Exemptions</button>
             </div>
           </div>
           <div class="buttons-row">
-            <button type="button" onclick="calculateScenario()">
-              <i class="fa-solid fa-calculator"></i> Calculate & View Results
-            </button>
+            <button type="button" onclick="resetInputs()">Reset</button>
+            <button type="button" onclick="calculateScenario()">Calculate & View Results</button>
           </div>
         </form>
-
-        <!-- Modal Popup for Input Results -->
         <div id="resultModal" class="modal">
           <div class="modal-content">
-            <span class="close-button" onclick="closeModal()">&times;</span>
+            <span class="close-button" onclick="closeModal()">×</span>
             <div id="modalResults"></div>
           </div>
         </div>
-
       </div>
     </section>
 
-    <!-- WTSL Tab -->
     <section id="wtslTab" class="tabcontent">
       <div class="calculation-info card">
-        <h4>
-          Willingess to Save Lives (WTSL)
-          <i class="fa-solid fa-circle-info info-icon" data-tooltip="How many lives per 100k are needed to offset attribute changes"></i>
-        </h4>
+        <h4>Willingness to Save Lives (WTSL) <i class="fa-solid fa-circle-info info-icon" title="How many lives per 100k are needed to offset policy changes"></i></h4>
+        <p>Shows how many lives must be saved to justify changes in policy settings.</p>
         <canvas id="wtslChart"></canvas>
         <div id="wtslInfo"></div>
       </div>
     </section>
 
-    <!-- Uptake Tab -->
     <section id="probTab" class="tabcontent">
       <div class="calculation-info card">
-        <h4>
-          Predicted Uptake
-          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Acceptance rate calculated from utility"></i>
-        </h4>
+        <h4>Predicted Uptake <i class="fa-solid fa-circle-info info-icon" title="Percentage of people likely to accept the vaccine"></i></h4>
+        <p>Estimates the percentage of people who would accept the vaccine based on your policy settings.</p>
         <button onclick="renderUptakeChart()"><i class="fa-solid fa-chart-pie"></i> Show Uptake Chart</button>
         <div class="chart-box"><canvas id="uptakeChart"></canvas></div>
         <button onclick="showUptakeRecommendations()"><i class="fa-solid fa-lightbulb"></i> Dynamic Recommendations</button>
       </div>
       <div id="uptakeModal" class="modal">
         <div class="modal-content">
-          <span class="close-button" onclick="closeUptakeModal()">&times;</span>
+          <span class="close-button" onclick="closeUptakeModal()">×</span>
           <div id="uptakeResults"></div>
         </div>
       </div>
     </section>
 
-    <!-- Costs & Benefits Tab -->
     <section id="costsTab" class="tabcontent">
       <div class="calculation-info card">
-        <h4>
-          Cost–Benefit Analysis
-          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Detailed breakdown using QALYs and real cost components"></i>
-        </h4>
-
-        <p>This section breaks down:</p>
+        <h4>Cost–Benefit Analysis <i class="fa-solid fa-circle-info info-icon" title="Detailed breakdown of costs and benefits"></i></h4>
+        <p>Compares the costs of implementing the mandate to the health benefits, measured in Quality-Adjusted Life Years (QALYs).</p>
         <ul>
-          <li><strong>Fixed Costs</strong> (infrastructure, administration, legal, communication, and monitoring).</li>
-          <li><strong>Variable Costs</strong> (per‐participant costs: time lost, additional testing, outreach).</li>
-          <li><strong>Benefits</strong> measured in QALYs: estimated QALYs saved per life &ndash; valued at country‐specific per‐QALY rates.</li>
-          <li><strong>Net Benefit</strong> = Total Benefit − Total Cost.</li>
+          <li><strong>Fixed Costs:</strong> One-time expenses like legal fees and communication campaigns.</li>
+          <li><strong>Variable Costs:</strong> Costs per vaccinated person, like time lost or testing.</li>
+          <li><strong>Benefits:</strong> Health benefits, assuming each life saved equals 10 QALYs, valued at country-specific rates.</li>
+          <li><strong>Net Benefit:</strong> Total benefits minus total costs.</li>
         </ul>
-        <p>Use the dropdown to choose a benefit scenario (Low/Medium/High). Adjusting “Lives Saved” or other inputs will dynamically recalc all components.</p>
-
         <div class="cost-scenario">
           <label for="benefitScenario">Benefit Scenario (Value per QALY):</label>
           <select id="benefitScenario" onchange="renderCostsBenefits()">
-            <option value="low">Low (&nbsp;A$40k / €35k)</option>
-            <option value="medium" selected>Medium (&nbsp;A$50k / €45k)</option>
-            <option value="high">High (&nbsp;A$60k / €55k)</option>
+            <option value="low">Low (A$40k / €35k)</option>
+            <option value="medium" selected>Medium (A$50k / €45k)</option>
+            <option value="high">High (A$60k / €55k)</option>
           </select>
         </div>
-
         <div id="costsBenefitsResults"></div>
       </div>
     </section>
 
-    <!-- Scenarios Tab -->
     <section id="scenariosTab" class="tabcontent">
       <div class="calculation-info card">
-        <h4>
-          Saved Scenarios
-          <i class="fa-solid fa-circle-info info-icon" data-tooltip="Review and export saved configurations"></i>
-        </h4>
+        <h4>Saved Scenarios <i class="fa-solid fa-circle-info info-icon" title="Review and export saved configurations"></i></h4>
+        <p>Save and compare different policy scenarios to see their impacts.</p>
         <button onclick="saveScenario()"><i class="fa-solid fa-save"></i> Save Scenario</button>
         <button onclick="openComparison()"><i class="fa-solid fa-file-pdf"></i> Compare & Export PDF</button>
         <button onclick="downloadCSV()"><i class="fa-solid fa-download"></i> Download CSV</button>
@@ -274,8 +214,21 @@
       </div>
     </section>
 
+    <section id="glossaryTab" class="tabcontent">
+      <div class="card">
+        <h2>Glossary <i class="fa-solid fa-circle-info info-icon" title="Key terms explained"></i></h2>
+        <ul>
+          <li><strong>QALY (Quality-Adjusted Life Year):</strong> A measure of health benefits, combining life expectancy and quality of life.</li>
+          <li><strong>WTSL (Willingness to Save Lives):</strong> The number of lives needed to justify a policy change.</li>
+          <li><strong>Fixed Costs:</strong> One-time expenses like legal fees or communication campaigns.</li>
+          <li><strong>Variable Costs:</strong> Costs per vaccinated person, like time lost or testing.</li>
+          <li><strong>Uptake Probability:</strong> The predicted percentage of people who would accept the vaccine.</li>
+        </ul>
+      </div>
+    </section>
+
     <footer>
-      <p>&copy; 2025 Vaccine Mandate Decision Aid Tool</p>
+      <p>© 2025 Vaccine Mandate Decision Aid Tool</p>
     </footer>
   </div>
 
