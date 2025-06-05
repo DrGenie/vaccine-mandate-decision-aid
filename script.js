@@ -47,7 +47,7 @@ function getCurrency(country) {
   return country === "Australia" ? "A$" : "€";
 }
 
-// Mixed-logit coefficients for different severity levels
+// error-logit coefficients for different severity levels
 const vaxCoefficients_pooled = {
   asc3:             1.067346,
   scopeAll:        -0.094717,
