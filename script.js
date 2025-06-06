@@ -1,4 +1,4 @@
-// script.js
+// scrippt.js
 
 // Event listener for DOM content loaded
 document.addEventListener("DOMContentLoaded", () => {
