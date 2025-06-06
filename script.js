@@ -1,194 +1,232 @@
-// scrippt.js
+// Global variables
+let savedScenarios = [];
+let currentScenario = null;
+let currentInputs = null;
 
-// Event listener for DOM content loaded
+// DOMContentLoaded event
 document.addEventListener("DOMContentLoaded", () => {
-  // Tab switching
-  document.querySelectorAll(".tablink").forEach(btn =>
-    btn.addEventListener("click", () => openTab(btn.dataset.tab, btn))
-  );
-  openTab("introTab", document.querySelector(".tablink.active"));
+  // Initialize tooltips
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
 
-  // Activate tooltips via title attribute
-  document.querySelectorAll(".info-icon").forEach(icon => {
-    const txt = icon.dataset.tooltip || icon.getAttribute("title");
-    if (txt) icon.setAttribute("title", txt);
-  });
-
-  // Load cost parameters from JSON file
-  window.costParams = {};
+  // Load cost parameters
   fetch('cost_params.json')
     .then(response => response.json())
     .then(data => {
       window.costParams = data;
+      // Initialize cost input fields with defaults
+      updateCostInputs();
     })
     .catch(error => console.error('Error loading cost parameters:', error));
+
+  // Render charts when tabs are shown
+  const wtslTab = document.querySelector('[data-bs-target="#wtslTab"]');
+  wtslTab.addEventListener('shown.bs.tab', () => renderWTSLChart());
+
+  const probTab = document.querySelector('[data-bs-target="#probTab"]');
+  probTab.addEventListener('shown.bs.tab', () => updateUptakeProgressBar());
+
+  const costsTab = document.querySelector('[data-bs-target="#costsTab"]');
+  costsTab.addEventListener('shown.bs.tab', () => {
+    renderCostBenefitChart();
+    renderNetBenefitChart();
+  });
+
+  // Initialize Mermaid for decision tree
+  mermaid.initialize({ startOnLoad: true });
 });
 
-// Tab switching function with fade-in effect
-function openTab(tabId, btn) {
-  document.querySelectorAll(".tabcontent").forEach(sec => {
-    sec.classList.remove("active");
-    sec.style.display = "none";
-  });
-  document.querySelectorAll(".tablink").forEach(b => b.classList.remove("active"));
-  const tabContent = document.getElementById(tabId);
-  tabContent.style.display = "block";
-  setTimeout(() => {
-    tabContent.classList.add("active");
-  }, 10);
-  btn.classList.add("active");
-  if (tabId === "wtslTab") renderWTSLChart();
-  if (tabId === "probTab") renderUptakeChart();
-  if (tabId === "costsTab") renderCostsBenefits();
-}
-
-// Utility function to get currency symbol
+// Utility function
 function getCurrency(country) {
   return country === "Australia" ? "A$" : "€";
 }
 
-// error-logit coefficients for different severity levels
+// Coefficients
 const vaxCoefficients_pooled = {
-  asc3:             1.067346,
-  scopeAll:        -0.094717,
+  asc3: 1.067346,
+  scopeAll: -0.094717,
   exemptionMedRel: -0.052939,
-  exemptionAll:    -0.1479027,
+  exemptionAll: -0.1479027,
   coverageModerate: 0.0929465,
-  coverageHigh:     0.0920977,
-  livesSavedCoeff:  0.0445604
+  coverageHigh: 0.0920977,
+  livesSavedCoeff: 0.0445604
 };
 const vaxCoefficients_mild = {
-  asc3:             0.9855033,
-  scopeAll:        -0.1689361,
+  asc3: 0.9855033,
+  scopeAll: -0.1689361,
   exemptionMedRel: -0.0376554,
-  exemptionAll:    -0.1753159,
+  exemptionAll: -0.1753159,
   coverageModerate: 0.1245323,
-  coverageHigh:     0.0662936,
-  livesSavedCoeff:  0.0412682
+  coverageHigh: 0.0662936,
+  livesSavedCoeff: 0.0412682
 };
 const vaxCoefficients_severe = {
-  asc3:             1.154312,
-  scopeAll:        -0.0204815,
+  asc3: 1.154312,
+  scopeAll: -0.0204815,
   exemptionMedRel: -0.0681409,
-  exemptionAll:    -0.1219056,
+  exemptionAll: -0.1219056,
   coverageModerate: 0.0610344,
-  coverageHigh:     0.116988,
-  livesSavedCoeff:  0.0480637
+  coverageHigh: 0.116988,
+  livesSavedCoeff: 0.0480637
 };
 
-// Cost-of-living multipliers
 const colMultipliers = { Australia: 1, France: 0.95, Italy: 0.9 };
 
-// QALY benefit scenarios
 const benefitScenarios = {
-  low:    { AUS: 40000, EUR: 35000 },
+  low: { AUS: 40000, EUR: 35000 },
   medium: { AUS: 50000, EUR: 45000 },
-  high:   { AUS: 60000, EUR: 55000 }
+  high: { AUS: 60000, EUR: 55000 }
 };
 
-// Compute cost-benefit details
-function computeCostBenefits(country, participants, livesSavedPer100k, benefitScenario, adjustCOL) {
-  const m = adjustCOL === "yes" ? colMultipliers[country] : 1;
-  let fixedCostSum = 0;
-  for (const key in window.costParams[country].fixed) {
-    fixedCostSum += window.costParams[country].fixed[key];
+// Update cost input fields with defaults
+function updateCostInputs() {
+  const country = document.getElementById("country_select").value || "Australia";
+  if (window.costParams && window.costParams[country]) {
+    document.getElementById("fixed_vaccineProcurement").value = window.costParams[country].fixed.vaccineProcurement;
+    document.getElementById("fixed_administration").value = window.costParams[country].fixed.administration;
+    document.getElementById("fixed_legal").value = window.costParams[country].fixed.legal;
+    document.getElementById("fixed_communication").value = window.costParams[country].fixed.communication;
+    document.getElementById("fixed_monitoring").value = window.costParams[country].fixed.monitoring;
+    document.getElementById("variablePerPerson").value = window.costParams[country].variablePerPerson;
   }
+}
+
+// Build scenario from parameters
+function buildScenario(params) {
+  const { country, adjustCOL, severity, scope, exemption, coverage, livesSaved, benefitScenario } = params;
+  let coeffs;
+  if (severity === "mild") coeffs = vaxCoefficients_mild;
+  else if (severity === "severe") coeffs = vaxCoefficients_severe;
+  else coeffs = vaxCoefficients_pooled;
+
+  const scopeAll = scope === "all";
+  const scopeText = scopeAll ? "All occupations & public spaces" : "High-risk occupations only";
+
+  const exemptionText = exemption === "medRel" ? "Medical + religious" : exemption === "all" ? "Medical + religious + personal beliefs" : "Medical only";
+
+  const coverageText = coverage === "70" ? "70% vaccinated" : coverage === "90" ? "90% vaccinated" : "50% vaccinated";
+
+  // Compute utility
+  let u = coeffs.asc3;
+  if (scopeAll) u += coeffs.scopeAll;
+  if (exemption === "medRel") u += coeffs.exemptionMedRel;
+  if (exemption === "all") u += coeffs.exemptionAll;
+  if (coverage === "70") u += coeffs.coverageModerate;
+  if (coverage === "90") u += coeffs.coverageHigh;
+  u += livesSaved * coeffs.livesSavedCoeff;
+
+  // Uptake probability
+  const uptakeProb = Math.exp(u) / (1 + Math.exp(u));
+  const uptakePct = (uptakeProb * 100).toFixed(1);
+  const participants = Math.round(uptakeProb * 322);
+
+  // Cost-benefit with custom inputs
+  const fixedCosts = {
+    vaccineProcurement: parseFloat(document.getElementById("fixed_vaccineProcurement").value) || window.costParams[country].fixed.vaccineProcurement,
+    administration: parseFloat(document.getElementById("fixed_administration").value) || window.costParams[country].fixed.administration,
+    legal: parseFloat(document.getElementById("fixed_legal").value) || window.costParams[country].fixed.legal,
+    communication: parseFloat(document.getElementById("fixed_communication").value) || window.costParams[country].fixed.communication,
+    monitoring: parseFloat(document.getElementById("fixed_monitoring").value) || window.costParams[country].fixed.monitoring
+  };
+  const variablePerPerson = parseFloat(document.getElementById("variablePerPerson").value) || window.costParams[country].variablePerPerson;
+
+  let fixedCostSum = 0;
+  for (const key in fixedCosts) {
+    fixedCostSum += fixedCosts[key];
+  }
+  const m = adjustCOL === "yes" ? colMultipliers[country] : 1;
   fixedCostSum *= m;
-  const varCost = window.costParams[country].variablePerPerson * participants * m;
+  const varCost = variablePerPerson * participants * m;
   const totalCost = fixedCostSum + varCost;
-  const totalLives = (livesSavedPer100k / 100000) * 322;
+  const totalLives = (livesSaved / 100000) * 322;
   const QALYsPerLife = 10;
   const totalQALYs = totalLives * QALYsPerLife;
   const currencyKey = country === "Australia" ? "AUS" : "EUR";
   const valuePerQALY = benefitScenarios[benefitScenario][currencyKey];
   const totalBenefit = totalQALYs * valuePerQALY;
   const netBenefit = totalBenefit - totalCost;
-  return { fixedCost: fixedCostSum, variableCost: varCost, totalCost, totalLives, QALYsPerLife, totalQALYs, valuePerQALY, totalBenefit, netBenefit };
+
+  return {
+    country,
+    severity,
+    scopeText,
+    exemptionText,
+    coverageText,
+    livesSaved,
+    uptakePct,
+    participants,
+    fixedCost: fixedCostSum,
+    variableCost: varCost,
+    totalCost,
+    totalLives,
+    QALYsPerLife,
+    totalQALYs,
+    valuePerQALY,
+    totalBenefit,
+    netBenefit
+  };
 }
 
-// Build scenario object from user inputs
+// Build scenario from inputs
 function buildScenarioFromInputs() {
   const country = document.getElementById("country_select").value || "Australia";
   const adjustCOL = document.getElementById("adjustCOL")?.value || "no";
-  const severityVal = document.getElementById("severitySelect").value;
-  let coeffs = severityVal === "mild" ? vaxCoefficients_mild : severityVal === "severe" ? vaxCoefficients_severe : vaxCoefficients_pooled;
-
-  const scopeAll = !!document.querySelector('input[name="scope"]:checked');
-  const scopeText = scopeAll ? "All occupations & public spaces" : "High-risk occupations only";
-
-  const exVal = document.querySelector('input[name="exemption"]:checked')?.value || "";
-  const exemptionText = exVal === "medRel" ? "Medical + religious" : exVal === "all" ? "Medical + religious + personal beliefs" : "Medical only";
-
-  const covVal = document.querySelector('input[name="coverage"]:checked')?.value || "";
-  const coverageText = covVal === "70" ? "70% vaccinated" : covVal === "90" ? "90% vaccinated" : "50% vaccinated";
-
+  const severity = document.getElementById("severitySelect").value;
+  const scope = document.querySelector('input[name="scope"]:checked')?.value || "";
+  const exemption = document.querySelector('input[name="exemption"]:checked')?.value || "";
+  const coverage = document.querySelector('input[name="coverage"]:checked')?.value || "";
   const livesSaved = parseInt(document.getElementById("livesSaved").value, 10);
-
-  let u = coeffs.asc3;
-  if (scopeAll) u += coeffs.scopeAll;
-  if (exVal === "medRel") u += coeffs.exemptionMedRel;
-  if (exVal === "all") u += coeffs.exemptionAll;
-  if (covVal === "70") u += coeffs.coverageModerate;
-  if (covVal === "90") u += coeffs.coverageHigh;
-  u += livesSaved * coeffs.livesSavedCoeff;
-
-  const uptakeProb = Math.exp(u) / (1 + Math.exp(u));
-  const uptakePct = (uptakeProb * 100).toFixed(1);
-  const participants = Math.round(uptakeProb * 322);
   const benefitScenario = document.getElementById("benefitScenario").value;
-  const cbData = computeCostBenefits(country, participants, livesSaved, benefitScenario, adjustCOL);
 
-  return { country, severity: severityVal.charAt(0).toUpperCase() + severityVal.slice(1), scopeText, exemptionText, coverageText, livesSaved, uptakePct, participants, ...cbData };
+  return buildScenario({ country, adjustCOL, severity, scope, exemption, coverage, livesSaved, benefitScenario });
 }
 
-// Display scenario results in a modal
+// Calculate scenario and show results
 function calculateScenario() {
-  const s = buildScenarioFromInputs();
-  const cur = getCurrency(s.country);
+  currentScenario = buildScenarioFromInputs();
+  currentInputs = {
+    country: document.getElementById("country_select").value,
+    adjustCOL: document.getElementById("adjustCOL")?.value,
+    severity: document.getElementById("severitySelect").value,
+    scope: document.querySelector('input[name="scope"]:checked')?.value || "",
+    exemption: document.querySelector('input[name="exemption"]:checked')?.value || "",
+    coverage: document.querySelector('input[name="coverage"]:checked')?.value || "",
+    benefitScenario: document.getElementById("benefitScenario").value
+  };
+  // Update uptake progress bar
+  const uptakeBar = document.getElementById("uptakeBar");
+  uptakeBar.style.width = `${currentScenario.uptakePct}%`;
+  uptakeBar.textContent = `${currentScenario.uptakePct}%`;
+  // Show modal
   const html = `
     <h4>Scenario Results</h4>
-    <p><strong>Country:</strong> ${s.country}</p>
-    <p><strong>Severity:</strong> ${s.severity}</p>
-    <p><strong>Scope:</strong> ${s.scopeText}</p>
-    <p><strong>Exemption:</strong> ${s.exemptionText}</p>
-    <p><strong>Coverage:</strong> ${s.coverageText}</p>
-    <p><strong>Lives Saved (per 100k):</strong> ${s.livesSaved}</p>
-    <p><strong>Predicted Uptake:</strong> ${s.uptakePct}%</p>
-    <p><strong>Participants (out of 322):</strong> ${s.participants}</p>
-    <p><strong>Total QALYs Saved:</strong> ${s.totalQALYs.toFixed(2)}</p>
-    <p><strong>Total Benefit:</strong> ${cur}${s.totalBenefit.toFixed(2)}</p>
-    <p><strong>Total Cost:</strong> ${cur}${s.totalCost.toFixed(2)}</p>
-    <p><strong>Net Benefit:</strong> ${cur}${s.netBenefit.toFixed(2)}</p>
+    <p><strong>Country:</strong> ${currentScenario.country}</p>
+    <p><strong>Severity:</strong> ${currentScenario.severity}</p>
+    <p><strong>Scope:</strong> ${currentScenario.scopeText}</p>
+    <p><strong>Exemption:</strong> ${currentScenario.exemptionText}</p>
+    <p><strong>Coverage:</strong> ${currentScenario.coverageText}</p>
+    <p><strong>Lives Saved (per 100k):</strong> ${currentScenario.livesSaved}</p>
+    <p><strong>Predicted Uptake:</strong> ${currentScenario.uptakePct}%</p>
+    <p><strong>Participants (out of 322):</strong> ${currentScenario.participants}</p>
+    <p><strong>Total QALYs Saved:</strong> ${currentScenario.totalQALYs.toFixed(2)}</p>
+    <p><strong>Total Benefit:</strong> ${getCurrency(currentScenario.country)}${currentScenario.totalBenefit.toFixed(2)}</p>
+    <p><strong>Total Cost:</strong> ${getCurrency(currentScenario.country)}${currentScenario.totalCost.toFixed(2)}</p>
+    <p><strong>Net Benefit:</strong> ${getCurrency(currentScenario.country)}${currentScenario.netBenefit.toFixed(2)}</p>
   `;
   document.getElementById("modalResults").innerHTML = html;
-  document.getElementById("resultModal").style.display = "block";
-}
-
-function closeModal() {
-  document.getElementById("resultModal").style.display = "none";
-}
-
-// Show dynamic uptake recommendations
-function showUptakeRecommendations() {
-  const s = buildScenarioFromInputs();
-  let rec = "<h4>Recommendations</h4>";
-  if (s.uptakePct < 40) rec += "<p><strong>Low uptake:</strong> Consider stronger communication strategies, increase incentives, and review exemption criteria to boost acceptance.</p>";
-  else if (s.uptakePct < 60) rec += "<p><strong>Moderate uptake:</strong> Fine-tune coverage thresholds, consider modest incentives, and monitor compliance closely.</p>";
-  else rec += "<p><strong>High uptake:</strong> Current policy appears effective. Maintain efforts, but continue monitoring for potential adjustments.</p>";
-  rec += `<p><strong>Participants (out of 322):</strong> ${s.participants}</p>`;
-  document.getElementById("uptakeResults").innerHTML = rec;
-  document.getElementById("uptakeModal").style.display = "block";
-}
-
-function closeUptakeModal() {
-  document.getElementById("uptakeModal").style.display = "none";
+  const modal = new bootstrap.Modal(document.getElementById("resultModal"));
+  modal.show();
 }
 
 // Render WTSL chart
 let wtslChart;
 function renderWTSLChart() {
   const severityVal = document.getElementById("severitySelect").value;
-  let coeffs = severityVal === "mild" ? vaxCoefficients_mild : severityVal === "severe" ? vaxCoefficients_severe : vaxCoefficients_pooled;
+  let coeffs;
+  if (severityVal === "mild") coeffs = vaxCoefficients_mild;
+  else if (severityVal === "severe") coeffs = vaxCoefficients_severe;
+  else coeffs = vaxCoefficients_pooled;
+
   const ctx = document.getElementById("wtslChart").getContext("2d");
   if (wtslChart) wtslChart.destroy();
   const wtsl70 = -coeffs.coverageModerate / coeffs.livesSavedCoeff;
@@ -217,141 +255,146 @@ function renderWTSLChart() {
       }
     }
   });
-  document.getElementById("wtslInfo").innerHTML = `
-    <p><strong>WTSL Interpretations (Severity: ${severityVal.charAt(0).toUpperCase() + severityVal.slice(1)}):</strong></p>
-    <ul>
-      <li><strong>Coverage 50→70%:</strong> Needs ~<em>${wtsl70.toFixed(2)}</em> extra lives per 100,000 to justify raising threshold.</li>
-      <li><strong>Coverage 50→90%:</strong> Needs ~<em>${wtsl90.toFixed(2)}</em> extra lives per 100,000.</li>
-      <li><strong>Expand to All Occupations:</strong> Needs ~<em>${wtslScope.toFixed(2)}</em> extra lives per 100,000.</li>
-      <li><strong>Add Med+Rel Exemption:</strong> ${wtslMedRel >= 0 ? `Needs ~<em>${wtslMedRel.toFixed(2)}</em> extra lives per 100,000.` : `No extra lives needed (preferred).`}</li>
-      <li><strong>Add Broad Exemption:</strong> ${wtslAll >= 0 ? `Needs ~<em>${wtslAll.toFixed(2)}</em> extra lives per 100,000.` : `No extra lives needed (preferred).`}</li>
-    </ul>
-  `;
 }
 
-// Render uptake chart
-let uptakeChart;
-function renderUptakeChart() {
-  const s = buildScenarioFromInputs();
-  const ctx = document.getElementById("uptakeChart").getContext("2d");
-  if (uptakeChart) uptakeChart.destroy();
-  uptakeChart = new Chart(ctx, {
-    type: "doughnut",
+// Update uptake progress bar
+function updateUptakeProgressBar() {
+  if (!currentScenario) return;
+  const uptakeBar = document.getElementById("uptakeBar");
+  uptakeBar.style.width = `${currentScenario.uptakePct}%`;
+  uptakeBar.textContent = `${currentScenario.uptakePct}%`;
+}
+
+// Render cost-benefit chart
+let costBenefitChart;
+function renderCostBenefitChart() {
+  if (!currentScenario) return;
+  const s = currentScenario;
+  const cur = getCurrency(s.country);
+  const ctx = document.getElementById("costBenefitChart").getContext("2d");
+  if (costBenefitChart) costBenefitChart.destroy();
+  costBenefitChart = new Chart(ctx, {
+    type: "bar",
     data: {
-      labels: ["Uptake", "Non-uptake"],
-      datasets: [{ data: [s.uptakePct, 100 - s.uptakePct], backgroundColor: ["#2E7D32", "#C62828"], borderColor: ["#1B5E20", "#B71C1C"], borderWidth: 1 }]
+      labels: ["Costs & Benefits"],
+      datasets: [
+        {
+          label: "Fixed Costs",
+          data: [s.fixedCost],
+          backgroundColor: "#EF5350"
+        },
+        {
+          label: "Variable Costs",
+          data: [s.variableCost],
+          backgroundColor: "#FFA726"
+        },
+        {
+          label: "Benefits",
+          data: [s.totalBenefit],
+          backgroundColor: "#66BB6A"
+        }
+      ]
     },
     options: {
       responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: cur }
+        }
+      },
       plugins: {
-        title: { display: true, text: `Predicted Uptake: ${s.uptakePct}% (n=322)` },
-        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw}%` } }
+        title: { display: true, text: "Cost-Benefit Breakdown" }
       }
     }
   });
 }
 
-// Render costs and benefits
-let combinedChart;
-function renderCostsBenefits() {
-  const s = buildScenarioFromInputs();
-  const cur = getCurrency(s.country);
-  const cb = computeCostBenefits(s.country, s.participants, s.livesSaved, document.getElementById("benefitScenario").value, document.getElementById("adjustCOL")?.value);
-  const container = document.getElementById("costsBenefitsResults");
-  container.innerHTML = `
-    <div class="card cost-card">
-      <h4>Fixed Cost Components <i class="fa-solid fa-circle-info info-icon" title="Infrastructure, legal, communication, monitoring"></i></h4>
-      <p><strong>Vaccine Procurement:</strong> ${cur}${window.costParams[s.country].fixed.vaccineProcurement.toFixed(2)}</p>
-      <p><strong>Administration & Staffing:</strong> ${cur}${window.costParams[s.country].fixed.administration.toFixed(2)}</p>
-      <p><strong>Legal & Compliance:</strong> ${cur}${window.costParams[s.country].fixed.legal.toFixed(2)}</p>
-      <p><strong>Communication & Outreach:</strong> ${cur}${window.costParams[s.country].fixed.communication.toFixed(2)}</p>
-      <p><strong>Monitoring & Data Systems:</strong> ${cur}${window.costParams[s.country].fixed.monitoring.toFixed(2)}</p>
-      <p><strong>Total Fixed Cost:</strong> ${cur}${cb.fixedCost.toFixed(2)}</p>
-    </div>
-    <div class="card cost-card">
-      <h4>Variable Cost Components <i class="fa-solid fa-circle-info info-icon" title="Time lost, testing, outreach per participant"></i></h4>
-      <p><strong>Per Participant Cost:</strong> ${cur}${window.costParams[s.country].variablePerPerson.toFixed(2)}</p>
-      <p><strong># Participants:</strong> ${s.participants}</p>
-      <p><strong>Total Variable Cost:</strong> ${cur}${cb.variableCost.toFixed(2)}</p>
-    </div>
-    <div class="card cost-card">
-      <h4>Benefit Components (QALY-Based) <i class="fa-solid fa-circle-info info-icon" title="Estimated QALYs and monetary value"></i></h4>
-      <p><strong>Total Lives Saved:</strong> ${cb.totalLives.toFixed(3)}</p>
-      <p><strong>QALYs per Life:</strong> 10</p>
-      <p><strong>Total QALYs Gained:</strong> ${cb.totalQALYs.toFixed(1)}</p>
-      <p><strong>Value per QALY:</strong> ${cur}${cb.valuePerQALY.toLocaleString()}</p>
-      <p><strong>Total Benefit:</strong> ${cur}${cb.totalBenefit.toFixed(2)}</p>
-    </div>
-    <div class="card cost-card">
-      <h4>Net Benefit</h4>
-      <p><strong>Total Cost:</strong> ${cur}${cb.totalCost.toFixed(2)}</p>
-      <p><strong>Total Benefit:</strong> ${cur}${cb.totalBenefit.toFixed(2)}</p>
-      <p><strong>Net Benefit:</strong> <span class="${cb.netBenefit >= 0 ? 'positive' : 'negative'}">${cur}${cb.netBenefit.toFixed(2)}</span></p>
-    </div>
-    <div id="combinedChartContainer"><canvas id="combinedChart"></canvas></div>
-  `;
-  const ctx2 = document.getElementById("combinedChart").getContext("2d");
-  if (combinedChart) combinedChart.destroy();
-  combinedChart = new Chart(ctx2, {
-    type: "bar",
+// Render net benefit sensitivity chart
+let netBenefitChart;
+function renderNetBenefitChart() {
+  if (!currentInputs) return;
+  const livesSavedValues = Array.from({length: 7}, (_, i) => 10 + i * 5); // 10 to 40
+  const netBenefits = livesSavedValues.map(ls => buildScenario({
+    ...currentInputs,
+    livesSaved: ls
+  }).netBenefit);
+
+  const ctx = document.getElementById("netBenefitChart").getContext("2d");
+  if (netBenefitChart) netBenefitChart.destroy();
+  netBenefitChart = new Chart(ctx, {
+    type: "line",
     data: {
-      labels: ["Fixed Cost", "Variable Cost", "Total Benefit", "Net Benefit"],
+      labels: livesSavedValues,
       datasets: [{
-        label: cur,
-        data: [cb.fixedCost, cb.variableCost, cb.totalBenefit, cb.netBenefit],
-        backgroundColor: ["#EF5350", "#FFA726", "#66BB6A", "#42A5F5"],
-        borderColor: ["#D32F2F", "#F57F17", "#388E3C", "#0288D1"],
-        borderWidth: 1
+        label: "Net Benefit",
+        data: netBenefits,
+        borderColor: "#42A5F5",
+        fill: false
       }]
     },
     options: {
       responsive: true,
-      scales: { y: { beginAtZero: true, title: { display: true, text: "Amount" } } },
+      scales: {
+        x: { title: { display: true, text: "Lives Saved per 100k" } },
+        y: { title: { display: true, text: getCurrency(currentInputs.country) } }
+      },
       plugins: {
-        title: { display: true, text: "Cost-Benefit Summary" },
-        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}${ctx.raw.toFixed(2)}` } }
+        title: { display: true, text: "Net Benefit Sensitivity to Lives Saved" }
       }
     }
   });
 }
 
-// Save scenario to table
-let savedScenarios = [];
+// Save scenario
 function saveScenario() {
-  const s = buildScenarioFromInputs();
-  s.name = `Scenario ${savedScenarios.length + 1}`;
+  if (!currentScenario) return alert("Please calculate a scenario first.");
+  const s = { ...currentScenario, name: `Scenario ${savedScenarios.length + 1}` };
   savedScenarios.push(s);
-  const row = document.createElement("tr");
-  ["name", "severity", "scopeText", "exemptionText", "coverageText", "livesSaved", "uptakePct", "netBenefit"].forEach(key => {
-    const td = document.createElement("td");
-    td.textContent = key === "netBenefit" ? getCurrency(s.country) + s[key].toFixed(2) : s[key];
-    row.appendChild(td);
-  });
-  document.querySelector("#scenarioTable tbody").appendChild(row);
-  alert(`Saved ${s.name}`);
+  updateScenarioTable();
 }
 
-// Export scenarios to PDF
+// Update scenario table
+function updateScenarioTable() {
+  const tbody = document.querySelector("#scenarioTable tbody");
+  tbody.innerHTML = "";
+  savedScenarios.forEach(s => {
+    const row = document.createElement("tr");
+    ["name", "severity", "scopeText", "exemptionText", "coverageText", "livesSaved", "uptakePct", "netBenefit"].forEach(key => {
+      const td = document.createElement("td");
+      td.textContent = key === "netBenefit" ? getCurrency(s.country) + s[key].toFixed(2) : s[key];
+      row.appendChild(td);
+    });
+    tbody.appendChild(row);
+  });
+}
+
+// Export to PDF
 function openComparison() {
-  if (savedScenarios.length < 2) return alert("Save at least two scenarios.");
+  if (savedScenarios.length < 2) return alert("Save at least two scenarios to compare.");
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   let y = 20;
-  doc.setFontSize(16).text("Scenario Comparison", 105, 10, { align: "center" });
-  savedScenarios.forEach(s => {
-    doc.setFontSize(12).text(`${s.name} (Severity: ${s.severity})`, 10, y); y += 6;
+  doc.setFontSize(16).text("Scenario Comparison", 105, y, { align: "center" });
+  y += 10;
+  savedScenarios.forEach((s, index) => {
+    doc.setFontSize(12).text(`${s.name} (Severity: ${s.severity})`, 10, y);
+    y += 6;
     doc.text(`Scope: ${s.scopeText}`, 10, y); y += 5;
     doc.text(`Exemption: ${s.exemptionText}`, 10, y); y += 5;
     doc.text(`Coverage: ${s.coverageText}`, 10, y); y += 5;
     doc.text(`Lives Saved: ${s.livesSaved}`, 10, y); y += 5;
     doc.text(`Uptake: ${s.uptakePct}%`, 10, y); y += 5;
     doc.text(`Net Benefit: ${getCurrency(s.country)}${s.netBenefit.toFixed(2)}`, 10, y); y += 10;
-    if (y > 260) { doc.addPage(); y = 20; }
+    if (y > 260) {
+      doc.addPage();
+      y = 20;
+    }
   });
   doc.save("Scenarios_Comparison.pdf");
 }
 
-// Download scenarios as CSV
+// Download CSV
 function downloadCSV() {
   if (!savedScenarios.length) return alert("No scenarios saved.");
   let csv = "Name,Severity,Scope,Exemption,Coverage,Lives,Uptake%,NetBenefit\n";
@@ -365,31 +408,65 @@ function downloadCSV() {
 }
 
 // Load preset scenarios
+const presets = {
+  current: { country: "Australia", adjustCOL: "no", severity: "pooled", scope: "", exemption: "", coverage: "", livesSaved: 25, benefitScenario: "medium" },
+  expanded: { country: "France", adjustCOL: "yes", severity: "severe", scope: "all", exemption: "medRel", coverage: "70", livesSaved: 30, benefitScenario: "high" },
+  relaxed: { country: "Italy", adjustCOL: "no", severity: "mild", scope: "", exemption: "all", coverage: "90", livesSaved: 20, benefitScenario: "low" }
+};
+
 function loadPreset(type) {
-  const presets = {
-    current: { scope: "", exemption: "", coverage: "", livesSaved: 25, severity: "pooled", country: "Australia", benefitScenario: "medium" },
-    expanded: { scope: "all", exemption: "medRel", coverage: "70", livesSaved: 30, severity: "severe", country: "France", benefitScenario: "high" },
-    relaxed: { scope: "", exemption: "all", coverage: "90", livesSaved: 20, severity: "mild", country: "Italy", benefitScenario: "low" }
-  };
   const preset = presets[type];
+  if (!preset) return;
+  document.getElementById("country_select").value = preset.country;
+  document.getElementById("adjustCOL").value = preset.adjustCOL;
   document.getElementById("severitySelect").value = preset.severity;
-  document.querySelector('input[name="scope"]').checked = preset.scope === "all";
-  document.querySelectorAll('input[name="exemption"]').forEach(input => input.checked = input.value === preset.exemption);
-  document.querySelectorAll('input[name="coverage"]').forEach(input => input.checked = input.value === preset.coverage);
+  document.querySelector('input[name="scope"][value="all"]').checked = preset.scope === "all";
+  document.querySelector('input[name="exemption"][value="medRel"]').checked = preset.exemption === "medRel";
+  document.querySelector('input[name="exemption"][value="all"]').checked = preset.exemption === "all";
+  document.querySelector('input[name="coverage"][value="70"]').checked = preset.coverage === "70";
+  document.querySelector('input[name="coverage"][value="90"]').checked = preset.coverage === "90";
   document.getElementById("livesSaved").value = preset.livesSaved;
   document.getElementById("livesSavedValue").textContent = preset.livesSaved;
-  document.getElementById("country_select").value = preset.country;
   document.getElementById("benefitScenario").value = preset.benefitScenario;
+  updateCostInputs();
 }
 
-// Reset inputs to default
+// Reset inputs
 function resetInputs() {
+  document.getElementById("country_select").value = "Australia";
+  document.getElementById("adjustCOL").value = "no";
   document.getElementById("severitySelect").value = "pooled";
-  document.querySelectorAll('input[name="scope"]').forEach(input => input.checked = false);
-  document.querySelectorAll('input[name="exemption"]').forEach(input => input.checked = false);
-  document.querySelectorAll('input[name="coverage"]').forEach(input => input.checked = false);
+  document.querySelector('input[name="scope"][value="all"]').checked = false;
+  document.querySelector('input[name="exemption"][value="medRel"]').checked = false;
+  document.querySelector('input[name="exemption"][value="all"]').checked = false;
+  document.querySelector('input[name="coverage"][value="70"]').checked = false;
+  document.querySelector('input[name="coverage"][value="90"]').checked = false;
   document.getElementById("livesSaved").value = 25;
   document.getElementById("livesSavedValue").textContent = 25;
-  document.getElementById("country_select").value = "Australia";
   document.getElementById("benefitScenario").value = "medium";
+  updateCostInputs();
+}
+
+// Show uptake recommendations
+function showUptakeRecommendations() {
+  if (!currentScenario) return alert("Please calculate a scenario first.");
+  const s = currentScenario;
+  let rec = "<h4>Uptake Recommendations</h4>";
+  if (s.uptakePct < 40) rec += "<p><strong>Low uptake:</strong> Consider stronger communication strategies, increase incentives, and review exemption criteria to boost acceptance.</p>";
+  else if (s.uptakePct < 60) rec += "<p><strong>Moderate uptake:</strong> Fine-tune coverage thresholds, consider modest incentives, and monitor compliance closely.</p>";
+  else rec += "<p><strong>High uptake:</strong> Current policy appears effective. Maintain efforts, but continue monitoring for potential adjustments.</p>";
+  rec += `<p><strong>Participants (out of 322):</strong> ${s.participants}</p>`;
+  document.getElementById("uptakeResults").innerHTML = rec;
+  const modal = new bootstrap.Modal(document.getElementById("uptakeModal"));
+  modal.show();
+}
+
+// Update all visualizations when inputs change
+function updateAll() {
+  if (currentInputs) {
+    currentScenario = buildScenarioFromInputs();
+    updateUptakeProgressBar();
+    renderCostBenefitChart();
+    renderNetBenefitChart();
+  }
 }
