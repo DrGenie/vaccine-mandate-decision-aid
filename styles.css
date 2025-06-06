@@ -31,12 +31,14 @@ body {
 }
 
 header h1 {
+  text-align: center;
   color: var(--primary-color);
   font-size: 2.5rem;
   margin-bottom: 10px;
 }
 
 header p {
+  text-align: center;
   color: #555;
   font-size: 1.1rem;
 }
@@ -154,15 +156,23 @@ header p {
   border-color: var(--secondary-dark);
 }
 
+.modal-content {
+  border-radius: 8px;
+}
+
 .chart-box {
   position: relative;
   height: 350px;
-  margin-top: 20px;
 }
 
 .progress {
   height: 1.5rem;
   font-size: 1rem;
+}
+
+.progress-bar {
+  color: #fff;
+  background-color: var(--secondary-color);
 }
 
 .table-responsive {
@@ -185,11 +195,16 @@ header p {
   text-align: center;
 }
 
-footer {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 0.9em;
-  color: #7f8c8d;
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  font-weight: bold;
+}
+
+.form-control, .form-select {
+  border-radius: 4px;
 }
 
 @media (max-width: 768px) {
