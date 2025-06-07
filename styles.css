@@ -163,6 +163,7 @@ header p {
 .chart-box {
   position: relative;
   height: 350px;
+  margin-top: 20px;
 }
 
 .progress {
@@ -221,3 +222,7 @@ header p {
     height: 300px;
   }
 }
+
+.positive { color: var(--secondary-color); }
+.negative { color: var(--accent-color); }
+.cost-card { margin-bottom: 15px; }
