@@ -1,14 +1,14 @@
-// Styles variables
 :root {
-  --primary-color: #1e88e5;
-  --primary-dark: #1565c0;
-  --secondary-color: #43a047;
-  --secondary-dark: #2e7d32;
-  --accent-color: #e53935;
-  --background-color: #e3f2fd;
+  --primary-color: #0055b3; /* Deep professional blue */
+  --primary-dark: #003d8f;
+  --secondary-color: #009688; /* Teal for vibrancy */
+  --secondary-dark: #00695c;
+  --accent-color: #d81b60; /* Pink for emphasis */
+  --background-color: #f5f8fa; /* Light blue-gray background */
   --card-background: #ffffff;
-  --text-color: #212121;
+  --text-color: #1a1a1a; /* Dark gray for readability */
   --shadow-color: rgba(0, 0, 0, 0.15);
+  --border-color: #e0e6ed;
 }
 
 * {
@@ -26,44 +26,45 @@ body {
 
 .container {
   max-width: 1400px;
-  margin: 20px auto;
-  padding: 20px;
+  margin: 30px auto;
+  padding: 25px;
   background: var(--card-background);
   border-radius: 12px;
-  box-shadow: 0 4px 20px var(--shadow-color);
+  box-shadow: 0 6px 25px var(--shadow-color);
 }
 
 header h1 {
   text-align: center;
   color: var(--primary-color);
-  font-size: 2.8rem;
-  margin-bottom: 10px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 header p.lead {
   text-align: center;
-  color: #424242;
-  font-size: 1.2rem;
+  color: #4a4a4a;
+  font-size: 1.25rem;
   font-weight: 500;
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: 900px;
+  margin: 0 auto 20px;
 }
 
 .instruction-banner {
-  background: linear-gradient(135deg, #bbdefb, #e3f2fd);
+  background: linear-gradient(135deg, #e8f0fe, #f5f8fa);
   border-left: 6px solid var(--primary-color);
   padding: 20px;
-  margin-bottom: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px var(--shadow-color);
+  margin-bottom: 25px;
+  border-radius: 10px;
+  box-shadow: 0 3px 12px var(--shadow-color);
   animation: slideIn 0.5s ease-out;
 }
 
 .instruction-banner .info-icon {
-  margin-right: 10px;
+  margin-right: 12px;
   color: var(--primary-color);
-  font-size: 1.2rem;
+  font-size: 1.3rem;
 }
 
 @keyframes slideIn {
@@ -76,26 +77,30 @@ header p.lead {
   top: 0;
   background: var(--card-background);
   z-index: 1000;
-  padding: 10px 0;
-  box-shadow: 0 2px 5px var(--shadow-color);
+  padding: 12px 0;
+  box-shadow: 0 3px 8px var(--shadow-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .nav-tabs .nav-link {
   color: var(--text-color);
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 1.1rem;
   border-radius: 8px;
-  padding: 10px 15px;
+  padding: 12px 20px;
   transition: all 0.3s ease;
+  margin: 0 5px;
 }
 
 .nav-tabs .nav-link.active {
   background-color: var(--primary-color);
   color: #fff;
-  transform: scale(1.05);
+  transform: scale(1.03);
+  box-shadow: 0 2px 5px rgba(0, 85, 179, 0.3);
 }
 
 .nav-tabs .nav-link:hover {
-  background-color: #e1f5fe;
+  background-color: #e8f0fe;
   color: var(--primary-dark);
 }
 
@@ -111,66 +116,69 @@ header p.lead {
 .card {
   background: var(--card-background);
   border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
+  padding: 25px;
+  margin-bottom: 25px;
   box-shadow: 0 4px 15px var(--shadow-color);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 6px 20px var(--shadow-color);
+  box-shadow: 0 8px 25px var(--shadow-color);
 }
 
 .attribute-card {
   display: flex;
-  gap: 15px;
-  padding: 15px;
-  border: 1px solid #e0e0e0;
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
   border-radius: 10px;
-  background: #f5faff;
-  box-shadow: 0 2px 8px var(--shadow-color);
+  background: #f9fafb;
+  box-shadow: 0 2px 10px var(--shadow-color);
 }
 
 .attribute-icon {
-  font-size: 30px;
+  font-size: 32px;
   color: var(--primary-color);
 }
 
 .attribute-content h4 {
   color: var(--primary-dark);
+  font-size: 1.5rem;
   margin-bottom: 10px;
 }
 
 .input-level-card {
   background: var(--card-background);
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-color);
   border-radius: 10px;
-  padding: 15px;
-  box-shadow: 0 2px 8px var(--shadow-color);
+  padding: 20px;
+  box-shadow: 0 2px 10px var(--shadow-color);
   transition: background-color 0.3s ease;
 }
 
 .input-level-card:hover {
-  background: #f9faff;
+  background: #f9fafb;
 }
 
 .input-level-card h3 {
-  margin-bottom: 10px;
-  font-size: 1.3rem;
+  margin-bottom: 12px;
+  font-size: 1.4rem;
   color: var(--primary-dark);
 }
 
 .input-level-card .small-text {
-  font-size: 0.85rem;
-  color: #757575;
+  font-size: 0.9rem;
+  color: #6b7280;
 }
 
 .btn-primary {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
-  padding: 10px 20px;
-  font-weight: 500;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 8px;
   transition: all 0.3s ease;
 }
 
@@ -178,13 +186,16 @@ header p.lead {
   background-color: var(--primary-dark);
   border-color: var(--primary-dark);
   transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 85, 179, 0.3);
 }
 
 .btn-secondary {
   background-color: var(--secondary-color);
   border-color: var(--secondary-color);
-  padding: 10px 20px;
-  font-weight: 500;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 8px;
   transition: all 0.3s ease;
 }
 
@@ -192,11 +203,12 @@ header p.lead {
   background-color: var(--secondary-dark);
   border-color: var(--secondary-dark);
   transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 150, 136, 0.3);
 }
 
 .modal-content {
   border-radius: 12px;
-  box-shadow: 0 4px 20px var(--shadow-color);
+  box-shadow: 0 6px 30px var(--shadow-color);
   animation: popIn 0.3s ease-out;
 }
 
@@ -205,20 +217,33 @@ header p.lead {
   to { transform: scale(1); opacity: 1; }
 }
 
+.modal-header {
+  background: var(--primary-color);
+  color: #fff;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.modal-title {
+  font-weight: 600;
+}
+
 .chart-box {
   position: relative;
   height: 400px;
-  margin-top: 20px;
-  background: #fafafa;
-  border-radius: 8px;
-  padding: 10px;
+  margin-top: 25px;
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px var(--shadow-color);
 }
 
 .progress {
-  height: 1.8rem;
-  font-size: 1rem;
-  border-radius: 8px;
+  height: 2rem;
+  font-size: 1.1rem;
+  border-radius: 10px;
   overflow: hidden;
+  background-color: #e0e6ed;
 }
 
 .progress-bar {
@@ -228,51 +253,60 @@ header p.lead {
 }
 
 .table-responsive {
-  margin-top: 20px;
+  margin-top: 25px;
 }
 
 .table th {
   background: var(--primary-color);
   color: #fff;
-  font-weight: 500;
+  font-weight: 600;
+  padding: 15px;
 }
 
 .table td {
-  border: 1px solid #e0e0e0;
-  padding: 12px;
+  border: 1px solid var(--border-color);
+  padding: 15px;
   text-align: center;
 }
 
 .mermaid {
-  margin-top: 20px;
+  margin-top: 25px;
   text-align: center;
-  background: #fafafa;
-  padding: 15px;
-  border-radius: 8px;
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px var(--shadow-color);
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .form-group label {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--primary-dark);
+  margin-bottom: 8px;
+  display: block;
 }
 
 .form-control, .form-select {
   border-radius: 8px;
-  border: 1px solid #b0bec5;
-  padding: 10px;
-  transition: border-color 0.3s ease;
+  border: 1px solid var(--border-color);
+  padding: 12px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .form-control:focus, .form-select:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 5px rgba(30, 136, 229, 0.3);
+  box-shadow: 0 0 8px rgba(0, 85, 179, 0.2);
 }
 
 @media (max-width: 768px) {
+  .container {
+    margin: 15px;
+    padding: 15px;
+  }
   .input-level-card {
     margin-bottom: 15px;
   }
@@ -280,17 +314,40 @@ header p.lead {
     flex-direction: column;
   }
   .nav-tabs .nav-link {
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    padding: 10px;
   }
   .chart-box {
     height: 300px;
   }
   header h1 {
-    font-size: 2rem;
+    font-size: 2.2rem;
+  }
+  .btn-primary, .btn-secondary {
+    padding: 10px 18px;
+    font-size: 0.95rem;
   }
 }
 
-.positive { color: var(--secondary-color); font-weight: bold; }
-.negative { color: var(--accent-color); font-weight: bold; }
-.cost-card { margin-bottom: 15px; border-left: 4px solid var(--primary-color); }
-.buttons-row { display: flex; gap: 10px; justify-content: center; }
+.positive {
+  color: var(--secondary-color);
+  font-weight: bold;
+}
+
+.negative {
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
+.cost-card {
+  margin-bottom: 20px;
+  border-left: 5px solid var(--primary-color);
+  padding-left: 15px;
+}
+
+.buttons-row {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
