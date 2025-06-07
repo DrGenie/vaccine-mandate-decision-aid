@@ -1,4 +1,4 @@
-// Global variables
+// Global vyariables
 let savedScenarios = [];
 let currentScenario = null;
 let currentInputs = null;
