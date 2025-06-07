@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
 
     // Initialize Mermaid
-    mermaid.initialize({ startOnLoad: true });
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
 
     // Load cost parameters
     fetch('cost_params.json')
@@ -37,18 +37,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Render charts when tabs are shown
     const wtslTab = document.querySelector('[data-bs-target="#wtslTab"]');
-    if (wtslTab) wtslTab.addEventListener('shown.bs.tab', () => renderWTSLChart());
+    if (wtslTab) wtslTab.addEventListener('shown.bs.tab', renderWTSLChart);
 
     const probTab = document.querySelector('[data-bs-target="#probTab"]');
-    if (probTab) probTab.addEventListener('shown.bs.tab', () => updateUptakeProgressBar());
+    if (probTab) probTab.addEventListener('shown.bs.tab', updateUptakeProgressBar);
 
     const costsTab = document.querySelector('[data-bs-target="#costsTab"]');
-    if (costsTab) costsTab.addEventListener('shown.bs.tab', () => renderCostsBenefits());
+    if (costsTab) costsTab.addEventListener('shown.bs.tab', renderCostsBenefits);
 
     // Add event listeners for input changes
-    const inputs = [
-      "country_select", "severitySelect", "livesSaved", "benefitScenario", "adjustCOL"
-    ];
+    const inputs = ["country_select", "severitySelect", "livesSaved", "benefitScenario", "adjustCOL"];
     inputs.forEach(id => {
       const el = document.getElementById(id);
       if (el) el.addEventListener("change", updateAll);
@@ -59,7 +57,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const livesSaved = document.getElementById("livesSaved");
-    if (livesSaved) livesSaved.addEventListener("input", updateAll);
+    if (livesSaved) livesSaved.addEventListener("input", () => {
+      const valueEl = document.getElementById("livesSavedValue");
+      if (valueEl) valueEl.textContent = livesSaved.value;
+      updateAll();
+    });
+
+    // Ensure WTSL chart renders on severity change
+    const severitySelect = document.getElementById("severitySelect");
+    if (severitySelect) severitySelect.addEventListener("change", renderWTSLChart);
   } catch (error) {
     console.error('Initialization error:', error);
     alert('Failed to initialize the tool. Please check the console for details.');
@@ -213,12 +219,12 @@ function buildScenarioFromInputs() {
   try {
     const country = document.getElementById("country_select")?.value || "Australia";
     const adjustCOL = document.getElementById("adjustCOL")?.value || "no";
-    const severity = document.getElementById("severitySelect")?.value;
+    const severity = document.getElementById("severitySelect")?.value || "pooled";
     const scope = document.querySelector('input[name="scope"]:checked')?.value || "";
     const exemption = document.querySelector('input[name="exemption"]:checked')?.value || "";
     const coverage = document.querySelector('input[name="coverage"]:checked')?.value || "";
     const livesSaved = parseInt(document.getElementById("livesSaved")?.value || "25", 10);
-    const benefitScenario = document.getElementById("benefitScenario")?.value;
+    const benefitScenario = document.getElementById("benefitScenario")?.value || "medium";
 
     return buildScenario({ country, adjustCOL, severity, scope, exemption, coverage, livesSaved, benefitScenario });
   } catch (error) {
@@ -231,11 +237,18 @@ function buildScenarioFromInputs() {
 function calculateScenario() {
   try {
     console.log('Calculating scenario');
+    const modalEl = document.getElementById("resultModal");
+    if (modalEl) {
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+    }
+
     currentScenario = buildScenarioFromInputs();
     if (!currentScenario) {
       alert("Failed to calculate scenario. Please check your inputs and ensure cost_params.json is loaded.");
       return;
     }
+
     currentInputs = {
       country: document.getElementById("country_select")?.value,
       adjustCOL: document.getElementById("adjustCOL")?.value,
@@ -246,6 +259,7 @@ function calculateScenario() {
       livesSaved: parseInt(document.getElementById("livesSaved")?.value || "25", 10),
       benefitScenario: document.getElementById("benefitScenario")?.value
     };
+
     updateUptakeProgressBar();
     const cur = getCurrency(currentScenario.country);
     const html = `
@@ -264,8 +278,10 @@ function calculateScenario() {
       <p><strong>Net Benefit:</strong> ${cur}${currentScenario.netBenefit.toFixed(2)}</p>
     `;
     const modalResults = document.getElementById("modalResults");
-    if (modalResults) modalResults.innerHTML = html;
-    const modalEl = document.getElementById("resultModal");
+    if (modalResults) {
+      modalResults.innerHTML = html;
+      modalResults.scrollTop = 0;
+    }
     if (modalEl) {
       const modal = new bootstrap.Modal(modalEl);
       modal.show();
@@ -293,29 +309,41 @@ function renderWTSLChart() {
       return;
     }
     if (wtslChart) wtslChart.destroy();
+
     const wtsl70 = -coeffs.coverageModerate / coeffs.livesSavedCoeff;
     const wtsl90 = -coeffs.coverageHigh / coeffs.livesSavedCoeff;
     const wtslScope = -coeffs.scopeAll / coeffs.livesSavedCoeff;
     const wtslMedRel = -coeffs.exemptionMedRel / coeffs.livesSavedCoeff;
     const wtslAll = -coeffs.exemptionAll / coeffs.livesSavedCoeff;
+
     wtslChart = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: ["Δ50→70% Coverage", "Δ50→90% Coverage", "Expand to All Occupations", "Add Med+Rel Exemption", "Add Broad Exemption"],
+        labels: ["Coverage 50→70%", "Coverage 50→90%", "Public Space Mandate", "Med+Rel Exemption", "Broad Exemption"],
         datasets: [{
           label: "Lives/100k",
           data: [wtsl70.toFixed(2), wtsl90.toFixed(2), wtslScope.toFixed(2), wtslMedRel.toFixed(2), wtslAll.toFixed(2)],
-          backgroundColor: ["#1565C0", "#2E7D32", "#F9A825", "#6A1B9A", "#C62828"],
-          borderColor: ["#0D47A1", "#1B5E20", "#F57F17", "#4A148C", "#B71C1C"],
+          backgroundColor: ["#42a5f5", "#66bb6a", "#ffca28", "#ab47bc", "#ef5350"],
+          borderColor: ["#1e88e5", "#43a047", "#ffb300", "#8e24aa", "#e53935"],
           borderWidth: 1
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true, title: { display: true, text: "Lives per 100,000" } } },
+        scales: {
+          y: {
+            beginAtZero: false,
+            title: { display: true, text: "Lives per 100,000" },
+            ticks: { stepSize: 1 }
+          }
+        },
         plugins: {
-          title: { display: true, text: `Willingness to Save Lives (WTSL) – ${severityVal.charAt(0).toUpperCase() + severityVal.slice(1)}` },
+          title: {
+            display: true,
+            text: `Willingness to Save Lives (WTSL) – ${severityVal.charAt(0).toUpperCase() + severityVal.slice(1)}`,
+            font: { size: 18 }
+          },
           tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw} lives` } }
         }
       }
@@ -324,13 +352,12 @@ function renderWTSLChart() {
     const wtslInfo = document.getElementById("wtslInfo");
     if (wtslInfo) {
       wtslInfo.innerHTML = `
-        <p><strong>WTSL Interpretations (Severity: ${severityVal.charAt(0).toUpperCase() + severityVal.slice(1)}):</strong></p>
+        <h5>WTSL Interpretations (Severity: ${severityVal.charAt(0).toUpperCase() + severityVal.slice(1)})</h5>
         <ul>
-          <li><strong>Coverage 50→70%:</strong> Needs ~<em>${wtsl70.toFixed(2)}</em> extra lives per 100,000 to justify raising threshold.</li>
-          <li><strong>Coverage 50→90%:</strong> Needs ~<em>${wtsl90.toFixed(2)}</em> extra lives per 100,000.</li>
-          <li><strong>Expand to All Occupations:</strong> Needs ~<em>${wtslScope.toFixed(2)}</em> extra lives per 100,000.</li>
-          <li><strong>Add Med+Rel Exemption:</strong> ${wtslMedRel >= 0 ? `Needs ~<em>${wtslMedRel.toFixed(2)}</em> extra lives per 100,000.` : `No extra lives needed (preferred).`}</li>
-          <li><strong>Add Broad Exemption:</strong> ${wtslAll >= 0 ? `Needs ~<em>${wtslAll.toFixed(2)}</em> extra lives per 100,000.` : `No extra lives needed (preferred).`}</li>
+          <li><strong>Scope (Public Space Mandates):</strong> WTSL = ${wtslScope.toFixed(2)} → Respondents require ~${Math.abs(wtslScope).toFixed(1)} additional lives saved per 100,000 to support a public space mandate over a high-risk worker-only mandate.</li>
+          <li><strong>Exemption (Medical + Religious + Personal Belief):</strong> WTSL = ${wtslAll.toFixed(2)} → Respondents require ~${Math.abs(wtslAll).toFixed(1)} additional lives saved to support broad exemptions including personal beliefs. This is statistically significant.</li>
+          <li><strong>Coverage: 70% (vs. 50%):</strong> WTSL = ${wtsl70.toFixed(2)} → Respondents would accept a 50% coverage threshold unless ~${Math.abs(wtsl70).toFixed(1)} extra lives per 100,000 are saved with 70% coverage.</li>
+          <li><strong>Coverage: 90% (vs. 50%):</strong> WTSL = ${wtsl90.toFixed(2)} → Respondents would accept a 50% coverage threshold unless ~${Math.abs(wtsl90).toFixed(1)} extra lives per 100,000 are saved with 90% coverage.</li>
         </ul>
       `;
     }
@@ -370,11 +397,11 @@ function showUptakeRecommendations() {
     let rec = "<h4>Uptake Recommendations</h4>";
     const uptake = parseFloat(currentScenario.uptakePct);
     if (uptake < 40) {
-      rec += "<p><strong>Low uptake:</strong> Consider stronger communication strategies, increase incentives, and review exemption criteria to boost acceptance.</p>";
+      rec += "<p><strong>Low uptake:</strong> Strengthen communication campaigns, offer incentives, and tighten exemption criteria to increase acceptance.</p>";
     } else if (uptake < 60) {
-      rec += "<p><strong>Moderate uptake:</strong> Fine-tune coverage thresholds, consider modest incentives, and monitor compliance closely.</p>";
+      rec += "<p><strong>Moderate uptake:</strong> Optimize coverage thresholds, introduce targeted incentives, and enhance compliance monitoring.</p>";
     } else {
-      rec += "<p><strong>High uptake:</strong> Current policy appears effective. Maintain efforts, but continue monitoring for potential adjustments.</p>";
+      rec += "<p><strong>High uptake:</strong> Policy is effective. Continue current strategies and monitor for sustained compliance.</p>";
     }
     rec += `<p><strong>Participants (out of 322):</strong> ${currentScenario.participants}</p>`;
     const uptakeResults = document.getElementById("uptakeResults");
@@ -446,22 +473,22 @@ function renderCostsBenefits() {
           {
             label: "Fixed Costs",
             data: [s.fixedCost],
-            backgroundColor: "#EF5350",
-            borderColor: "#D32F2F",
+            backgroundColor: "#ef5350",
+            borderColor: "#d32f2f",
             borderWidth: 1
           },
           {
             label: "Variable Costs",
             data: [s.variableCost],
-            backgroundColor: "#FFA726",
-            borderColor: "#F57F17",
+            backgroundColor: "#ffa726",
+            borderColor: "#f57f17",
             borderWidth: 1
           },
           {
             label: "Benefits",
             data: [s.totalBenefit],
-            backgroundColor: "#66BB6A",
-            borderColor: "#388E3C",
+            backgroundColor: "#66bb6a",
+            borderColor: "#388e3c",
             borderWidth: 1
           }
         ]
@@ -472,11 +499,12 @@ function renderCostsBenefits() {
         scales: {
           y: {
             beginAtZero: true,
-            title: { display: true, text: cur }
+            title: { display: true, text: cur },
+            ticks: { callback: value => `${cur}${value.toLocaleString()}` }
           }
         },
         plugins: {
-          title: { display: true, text: "Cost-Benefit Breakdown" },
+          title: { display: true, text: "Cost-Benefit Breakdown", font: { size: 18 } },
           tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${cur}${ctx.raw.toFixed(2)}` } }
         }
       }
@@ -500,9 +528,10 @@ function renderCostsBenefits() {
         datasets: [{
           label: "Net Benefit",
           data: netBenefits,
-          borderColor: "#42A5F5",
-          fill: false,
-          tension: 0.1
+          borderColor: "#42a5f5",
+          backgroundColor: "rgba(66, 165, 245, 0.2)",
+          fill: true,
+          tension: 0.3
         }]
       },
       options: {
@@ -510,10 +539,13 @@ function renderCostsBenefits() {
         maintainAspectRatio: false,
         scales: {
           x: { title: { display: true, text: "Lives Saved per 100k" } },
-          y: { title: { display: true, text: cur } }
+          y: {
+            title: { display: true, text: cur },
+            ticks: { callback: value => `${cur}${value.toLocaleString()}` }
+          }
         },
         plugins: {
-          title: { display: true, text: "Net Benefit Sensitivity to Lives Saved" },
+          title: { display: true, text: "Net Benefit Sensitivity to Lives Saved", font: { size: 18 } },
           tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${cur}${ctx.raw.toFixed(2)}` } }
         }
       }
@@ -635,28 +667,15 @@ function loadPreset(type) {
     const preset = presets[type];
     if (!preset) return;
 
-    const countryEl = document.getElementById("country_select");
-    if (countryEl) countryEl.value = preset.country;
-
-    const adjustCOLEl = document.getElementById("adjustCOL");
-    if (adjustCOLEl) adjustCOLEl.value = preset.adjustCOL;
-
-    const severityEl = document.getElementById("severitySelect");
-    if (severityEl) severityEl.value = preset.severity;
-
+    document.getElementById("country_select").value = preset.country;
+    document.getElementById("adjustCOL").value = preset.adjustCOL;
+    document.getElementById("severitySelect").value = preset.severity;
     document.querySelectorAll('input[name="scope"]').forEach(input => input.checked = input.value === preset.scope);
     document.querySelectorAll('input[name="exemption"]').forEach(input => input.checked = input.value === preset.exemption);
     document.querySelectorAll('input[name="coverage"]').forEach(input => input.checked = input.value === preset.coverage);
-
-    const livesSavedEl = document.getElementById("livesSaved");
-    if (livesSavedEl) {
-      livesSavedEl.value = preset.livesSaved;
-      const livesSavedValue = document.getElementById("livesSavedValue");
-      if (livesSavedValue) livesSavedValue.textContent = preset.livesSaved.toString();
-    }
-
-    const benefitScenarioEl = document.getElementById("benefitScenario");
-    if (benefitScenarioEl) benefitScenarioEl.value = preset.benefitScenario;
+    document.getElementById("livesSaved").value = preset.livesSaved;
+    document.getElementById("livesSavedValue").textContent = preset.livesSaved.toString();
+    document.getElementById("benefitScenario").value = preset.benefitScenario;
 
     updateCostInputs();
     updateAll();
@@ -669,28 +688,15 @@ function loadPreset(type) {
 function resetInputs() {
   try {
     console.log('Resetting inputs');
-    const countryEl = document.getElementById("country_select");
-    if (countryEl) countryEl.value = "Australia";
-
-    const adjustCOLEl = document.getElementById("adjustCOL");
-    if (adjustCOLEl) adjustCOLEl.value = "no";
-
-    const severityEl = document.getElementById("severitySelect");
-    if (severityEl) severityEl.value = "pooled";
-
+    document.getElementById("country_select").value = "Australia";
+    document.getElementById("adjustCOL").value = "no";
+    document.getElementById("severitySelect").value = "pooled";
     document.querySelectorAll('input[name="scope"]').forEach(input => input.checked = false);
     document.querySelectorAll('input[name="exemption"]').forEach(input => input.checked = false);
     document.querySelectorAll('input[name="coverage"]').forEach(input => input.checked = false);
-
-    const livesSavedEl = document.getElementById("livesSaved");
-    if (livesSavedEl) {
-      livesSavedEl.value = 25;
-      const livesSavedValue = document.getElementById("livesSavedValue");
-      if (livesSavedValue) livesSavedValue.textContent = "25";
-    }
-
-    const benefitScenarioEl = document.getElementById("benefitScenario");
-    if (benefitScenarioEl) benefitScenarioEl.value = "medium";
+    document.getElementById("livesSaved").value = 25;
+    document.getElementById("livesSavedValue").textContent = "25";
+    document.getElementById("benefitScenario").value = "medium";
 
     updateCostInputs();
     updateAll();
@@ -703,12 +709,10 @@ function resetInputs() {
 function updateAll() {
   try {
     console.log('Updating all visualizations');
-    if (currentInputs) {
-      currentScenario = buildScenarioFromInputs();
-      updateUptakeProgressBar();
-      renderWTSLChart();
-      renderCostsBenefits();
-    }
+    currentScenario = buildScenarioFromInputs();
+    updateUptakeProgressBar();
+    renderWTSLChart();
+    renderCostsBenefits();
   } catch (error) {
     console.error('Error updating visualizations:', error);
   }
