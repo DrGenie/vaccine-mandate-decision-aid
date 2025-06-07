@@ -25,14 +25,14 @@ document.addEventListener("DOMContentLoaded", () => {
       .then(data => {
         window.costParams = data;
         updateCostInputs();
-        // Initial render if on relevant tabs
+        // Initial render for active tabs
         if (document.querySelector('#wtslTab')?.classList.contains('show')) renderWTSLChart();
         if (document.querySelector('#probTab')?.classList.contains('show')) updateUptakeProgressBar();
         if (document.querySelector('#costsTab')?.classList.contains('show')) renderCostsBenefits();
       })
       .catch(error => {
         console.error('Error loading cost parameters:', error);
-        alert('Failed to load cost parameters. Please ensure cost_params.json exists and try again.');
+        alert('Failed to load cost parameters. Please ensure cost_params.json exists.');
       });
 
     // Render charts when tabs are shown
@@ -63,9 +63,20 @@ document.addEventListener("DOMContentLoaded", () => {
       updateAll();
     });
 
-    // Ensure WTSL chart renders on severity change
+    // Ensure WTSL chart updates on severity change
     const severitySelect = document.getElementById("severitySelect");
     if (severitySelect) severitySelect.addEventListener("change", renderWTSLChart);
+
+    // Ensure modal is ready
+    const resultModal = document.getElementById("resultModal");
+    if (resultModal) {
+      resultModal.addEventListener('show.bs.modal', () => {
+        const modalResults = document.getElementById("modalResults");
+        if (modalResults && !currentScenario) {
+          modalResults.innerHTML = "<p>Please calculate a scenario first.</p>";
+        }
+      });
+    }
   } catch (error) {
     console.error('Initialization error:', error);
     alert('Failed to initialize the tool. Please check the console for details.');
@@ -237,12 +248,6 @@ function buildScenarioFromInputs() {
 function calculateScenario() {
   try {
     console.log('Calculating scenario');
-    const modalEl = document.getElementById("resultModal");
-    if (modalEl) {
-      const modal = bootstrap.Modal.getInstance(modalEl);
-      if (modal) modal.hide();
-    }
-
     currentScenario = buildScenarioFromInputs();
     if (!currentScenario) {
       alert("Failed to calculate scenario. Please check your inputs and ensure cost_params.json is loaded.");
@@ -260,33 +265,33 @@ function calculateScenario() {
       benefitScenario: document.getElementById("benefitScenario")?.value
     };
 
-    updateUptakeProgressBar();
     const cur = getCurrency(currentScenario.country);
     const html = `
       <h4>Scenario Results</h4>
-      <p><strong>Country:</strong> ${currentScenario.country}</p>
-      <p><strong>Severity:</strong> ${currentScenario.severity}</p>
-      <p><strong>Scope:</strong> ${currentScenario.scopeText}</p>
-      <p><strong>Exemption:</strong> ${currentScenario.exemptionText}</p>
-      <p><strong>Coverage:</strong> ${currentScenario.coverageText}</p>
-      <p><strong>Lives Saved (per 100k):</strong> ${currentScenario.livesSaved}</p>
-      <p><strong>Predicted Uptake:</strong> ${currentScenario.uptakePct}%</p>
-      <p><strong>Participants (out of 322):</strong> ${currentScenario.participants}</p>
-      <p><strong>Total QALYs Saved:</strong> ${currentScenario.totalQALYs.toFixed(2)}</p>
-      <p><strong>Total Benefit:</strong> ${cur}${currentScenario.totalBenefit.toFixed(2)}</p>
-      <p><strong>Total Cost:</strong> ${cur}${currentScenario.totalCost.toFixed(2)}</p>
-      <p><strong>Net Benefit:</strong> ${cur}${currentScenario.netBenefit.toFixed(2)}</p>
+      <div class="result-grid">
+        <p><strong>Country:</strong> ${currentScenario.country}</p>
+        <p><strong>Severity:</strong> ${currentScenario.severity}</p>
+        <p><strong>Scope:</strong> ${currentScenario.scopeText}</p>
+        <p><strong>Exemption:</strong> ${currentScenario.exemptionText}</p>
+        <p><strong>Coverage:</strong> ${currentScenario.coverageText}</p>
+        <p><strong>Lives Saved (per 100k):</strong> ${currentScenario.livesSaved}</p>
+        <p><strong>Predicted Uptake:</strong> ${currentScenario.uptakePct}%</p>
+        <p><strong>Participants (out of 322):</strong> ${currentScenario.participants}</p>
+        <p><strong>Total QALYs Saved:</strong> ${currentScenario.totalQALYs.toFixed(2)}</p>
+        <p><strong>Total Benefit:</strong> ${cur}${currentScenario.totalBenefit.toFixed(2)}</p>
+        <p><strong>Total Cost:</strong> ${cur}${currentScenario.totalCost.toFixed(2)}</p>
+        <p><strong>Net Benefit:</strong> <span class="${currentScenario.netBenefit >= 0 ? 'positive' : 'negative'}">${cur}${currentScenario.netBenefit.toFixed(2)}</span></p>
+      </div>
     `;
     const modalResults = document.getElementById("modalResults");
     if (modalResults) {
       modalResults.innerHTML = html;
       modalResults.scrollTop = 0;
     }
-    if (modalEl) {
-      const modal = new bootstrap.Modal(modalEl);
-      modal.show();
-    }
-    updateAll();
+
+    updateUptakeProgressBar();
+    renderWTSLChart();
+    renderCostsBenefits();
   } catch (error) {
     console.error('Error calculating scenario:', error);
     alert('Failed to calculate scenario. Please check the console for details.');
@@ -406,11 +411,6 @@ function showUptakeRecommendations() {
     rec += `<p><strong>Participants (out of 322):</strong> ${currentScenario.participants}</p>`;
     const uptakeResults = document.getElementById("uptakeResults");
     if (uptakeResults) uptakeResults.innerHTML = rec;
-    const modalEl = document.getElementById("uptakeModal");
-    if (modalEl) {
-      const modal = new bootstrap.Modal(modalEl);
-      modal.show();
-    }
   } catch (error) {
     console.error('Error showing uptake recommendations:', error);
   }
