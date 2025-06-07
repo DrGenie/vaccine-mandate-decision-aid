@@ -13,11 +13,11 @@
   <div class="container">
     <header class="text-center">
       <h1>Vaccine Mandate Decision Aid Tool</h1>
-      <p class="lead">Explore how vaccine mandate policies impact public acceptance and costs, using survey data from 322 respondents.</p>
+      <p class="lead">Evaluate vaccine mandate policies with insights from 322 respondents, analyzing public acceptance and cost-benefit outcomes.</p>
     </header>
     <div class="instruction-banner card">
       <i class="fa-solid fa-circle-info info-icon" data-bs-toggle="tooltip" title="Follow these steps to use the tool"></i>
-      <strong>How to Use:</strong> Configure settings in <em>Inputs</em>, adjust costs in <em>Costs & Benefits</em>, and click <em>Calculate</em> to view results. Save scenarios in <em>Scenarios</em> for comparison.
+      <strong>How to Use:</strong> Configure settings in <em>Inputs</em>, adjust costs in <em>Costs & Benefits</em>, and click <em>Calculate & View Results</em> to see results in a pop-up. Save scenarios in <em>Scenarios</em> for comparison.
     </div>
     <nav class="tabs" role="tablist">
       <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -67,7 +67,7 @@
       <div class="tab-pane fade show active" id="introTab" role="tabpanel" aria-labelledby="introTab-tab">
         <div class="card">
           <h2>Introduction <i class="fa-solid fa-circle-info info-icon" data-bs-toggle="tooltip" title="What this tool does"></i></h2>
-          <p>This interactive tool empowers you to evaluate vaccine mandate policies by modeling public acceptance and cost-benefit outcomes. Built on survey data from 322 respondents, it predicts how policy settings affect vaccine uptake and calculates economic impacts using realistic estimates.</p>
+          <p>This interactive tool enables you to evaluate vaccine mandate policies by modeling public acceptance and cost-benefit outcomes. Using survey data from 322 respondents, it predicts vaccine uptake and calculates economic impacts with realistic estimates, empowering informed decision-making.</p>
         </div>
       </div>
       <div class="tab-pane fade" id="attributesTab" role="tabpanel" aria-labelledby="attributesTab-tab">
@@ -124,7 +124,7 @@
             <div class="input-cards row">
               <div class="col-md-4 input-level-card">
                 <h3>Country</h3>
-                <select id="country_select" class="form-control" onchange="updateCostInputs()">
+                <select id="country_select" class="form-control">
                   <option value="Australia">Australia</option>
                   <option value="France">France</option>
                   <option value="Italy">Italy</option>
@@ -160,20 +160,20 @@
               <div class="col-md-4 input-level-card">
                 <h3>Lives Saved</h3>
                 <input type="range" id="livesSaved" min="10" max="40" step="5" value="25" class="form-range"
-                       oninput="document.getElementById('livesSavedValue').textContent=this.value" />
+                       oninput="document.getElementById('livesSavedValue').textContent = this.value" />
                 <p><strong><span id="livesSavedValue">25</span></strong> per 100,000</p>
-                <p class="small-text">Adjust the slider to set the lives saved estimate.</p>
+                <p class="small-text">Adjust the slider to set the estimated lives saved.</p>
               </div>
               <div class="col-md-4 input-level-card">
                 <h3>Preset Scenarios</h3>
-                <button type="button" class="btn btn-secondary mb-2" onclick="loadPreset('current')">Current Policy</button>
-                <button type="button" class="btn btn-secondary mb-2" onclick="loadPreset('expanded')">Expanded Mandate</button>
-                <button type="button" class="btn btn-secondary mb-2" onclick="loadPreset('relaxed')">Relaxed Exemptions</button>
+                <button type="button" class="btn btn-secondary mb-1 w-100" onclick="loadPreset('current')">Current Policy</button>
+                <button type="button" class="btn btn-secondary mb-1 w-100" onclick="loadPreset('expanded')">Expanded Mandate</button>
+                <button type="button" class="btn btn-secondary w-100" onclick="loadPreset('relaxed')">Relaxed Exemptions</button>
               </div>
             </div>
             <div class="buttons-row mt-3">
               <button type="button" class="btn btn-secondary" onclick="resetInputs()">Reset</button>
-              <button type="button" class="btn btn-primary" onclick="calculateScenario()">Calculate & View Results</button>
+              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#resultModal" onclick="calculateScenario()">Calculate & View Results</button>
             </div>
           </form>
           <div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
@@ -209,7 +209,7 @@
           <div class="progress mt-3">
             <div id="uptakeBar" class="progress-bar bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
           </div>
-          <button onclick="showUptakeRecommendations()" class="btn btn-primary mt-3">Recommendation</button>
+          <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#uptakeModal" onclick="showUptakeRecommendations()">Recommendation</button>
         </div>
         <div class="modal fade" id="uptakeModal" tabindex="-1" aria-labelledby="uptakeModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered">
@@ -262,13 +262,13 @@
             </div>
             <div class="col-md-6">
               <h5>Benefit Scenario (Value per QALY)</h5>
-              <select id="benefitScenario" class="form-control mb-3" onchange="updateAll()">
+              <select id="benefitScenario" class="form-control mb-3">
                 <option value="low">Low (A$40k / €35k)</option>
                 <option value="medium" selected>Medium (A$50k / €45k)</option>
                 <option value="high">High (A$60k / €55k)</option>
               </select>
               <h5>Cost of Living Adjustment</h5>
-              <select id="adjustCOL" class="form-control mb-3" onchange="updateAll()">
+              <select id="adjustCOL" class="form-control mb-3">
                 <option value="yes">Yes</option>
                 <option value="no" selected>No</option>
               </select>
@@ -315,7 +315,7 @@
         <div class="card">
           <h2>Glossary <i class="fa-solid fa-circle-info info-icon" data-bs-toggle="tooltip" title="Key terms explained"></i></h2>
           <ul>
-            <li><strong>QALY (Quality-Adjusted Life Year):</strong> A measure of health benefits, combining life expectancy and quality of life.</li>
+            <li><strong>QALY (Quality-Adjusted Life Year):</strong> A measure of health benefits combining life expectancy and quality of life.</li>
             <li><strong>WTSL (Willingness to Save Lives):</strong> The number of additional lives per 100,000 needed to justify a policy change.</li>
             <li><strong>Fixed Costs:</strong> One-time expenses like legal fees or communication campaigns.</li>
             <li><strong>Variable Costs:</strong> Costs per vaccinated person, such as time lost or testing.</li>
