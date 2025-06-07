@@ -1,0 +1,32 @@
+{
+  "Australia": {
+    "fixed": {
+      "vaccineProcurement": 80000,
+      "administration": 30000,
+      "legal": 10000,
+      "communication": 15000,
+      "monitoring": 20000
+    },
+    "variablePerPerson": 40
+  },
+  "France": {
+    "fixed": {
+      "vaccineProcurement": 75000,
+      "administration": 28000,
+      "legal": 9000,
+      "communication": 14000,
+      "monitoring": 18000
+    },
+    "variablePerPerson": 35
+  },
+  "Italy": {
+    "fixed": {
+      "vaccineProcurement": 70000,
+      "administration": 25000,
+      "legal": 8000,
+      "communication": 13000,
+      "monitoring": 17000
+    },
+    "variablePerPerson": 30
+  }
+}
