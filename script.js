@@ -1,6 +1,7 @@
 // Global variables
 let savedScenarios = [];
 let currentScenario = null;
+let currentInputs = null;
 let wtslChart;
 let costBenefitChart;
 let netBenefitChart;
@@ -217,6 +218,16 @@ function calculateScenario() {
     alert("Failed to calculate scenario. Please check your inputs and ensure cost_params.json is loaded.");
     return;
   }
+  currentInputs = {
+    country: document.getElementById("country_select").value,
+    adjustCOL: document.getElementById("adjustCOL")?.value,
+    severity: document.getElementById("severitySelect").value,
+    scope: document.querySelector('input[name="scope"]:checked')?.value || "",
+    exemption: document.querySelector('input[name="exemption"]:checked')?.value || "",
+    coverage: document.querySelector('input[name="coverage"]:checked')?.value || "",
+    livesSaved: parseInt(document.getElementById("livesSaved").value, 10),
+    benefitScenario: document.getElementById("benefitScenario").value
+  };
   updateUptakeProgressBar();
   const cur = getCurrency(currentScenario.country);
   const html = `
@@ -237,9 +248,7 @@ function calculateScenario() {
   document.getElementById("modalResults").innerHTML = html;
   const modal = new bootstrap.Modal(document.getElementById("resultModal"));
   modal.show();
-  // Update all visualizations
-  renderWTSLChart();
-  renderCostsBenefits();
+  updateAll();
 }
 
 // Render WTSL chart
@@ -284,7 +293,6 @@ function renderWTSLChart() {
     }
   });
 
-  // Update WTSL info
   document.getElementById("wtslInfo").innerHTML = `
     <p><strong>WTSL Interpretations (Severity: ${severityVal.charAt(0).toUpperCase() + severityVal.slice(1)}):</strong></p>
     <ul>
@@ -318,9 +326,9 @@ function showUptakeRecommendations() {
     return;
   }
   let rec = "<h4>Uptake Recommendations</h4>";
-  if (currentScenario.uptakePct < 40) {
+  if (parseFloat(currentScenario.uptakePct) < 40) {
     rec += "<p><strong>Low uptake:</strong> Consider stronger communication strategies, increase incentives, and review exemption criteria to boost acceptance.</p>";
-  } else if (currentScenario.uptakePct < 60) {
+  } else if (parseFloat(currentScenario.uptakePct) < 60) {
     rec += "<p><strong>Moderate uptake:</strong> Fine-tune coverage thresholds, consider modest incentives, and monitor compliance closely.</p>";
   } else {
     rec += "<p><strong>High uptake:</strong> Current policy appears effective. Maintain efforts, but continue monitoring for potential adjustments.</p>";
@@ -522,4 +530,73 @@ function downloadCSV() {
     alert("No scenarios saved.");
     return;
   }
-  let csv
+  let csv = "Name,Severity,Scope,Exemption,Coverage,Lives,Uptake%,NetBenefit\n";
+  savedScenarios.forEach(s => {
+    csv += [
+      s.name,
+      s.severity,
+      s.scopeText,
+      s.exemptionText,
+      s.coverageText,
+      s.livesSaved,
+      s.uptakePct,
+      getCurrency(s.country) + s.netBenefit.toFixed(2)
+    ].join(",") + "\n";
+  });
+  const link = document.createElement("a");
+  link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
+  link.download = "scenarios.csv";
+  link.click();
+}
+
+// Load preset scenarios
+function loadPreset(type) {
+  console.log('Loading preset:', type);
+  const presets = {
+    current: { country: "Australia", adjustCOL: "no", severity: "pooled", scope: "", exemption: "", coverage: "", livesSaved: 25, benefitScenario: "medium" },
+    expanded: { country: "France", adjustCOL: "yes", severity: "severe", scope: "all", exemption: "medRel", coverage: "70", livesSaved: 30, benefitScenario: "high" },
+    relaxed: { country: "Italy", adjustCOL: "no", severity: "mild", scope: "", exemption: "all", coverage: "90", livesSaved: 20, benefitScenario: "low" }
+  };
+  const preset = presets[type];
+  if (!preset) return;
+  document.getElementById("country_select").value = preset.country;
+  document.getElementById("adjustCOL").value = preset.adjustCOL;
+  document.getElementById("severitySelect").value = preset.severity;
+  document.querySelector('input[name="scope"][value="all"]').checked = preset.scope === "all";
+  document.querySelector('input[name="exemption"][value="medRel"]').checked = preset.exemption === "medRel";
+  document.querySelector('input[name="exemption"][value="all"]').checked = preset.exemption === "all";
+  document.querySelector('input[name="coverage"][value="70"]').checked = preset.coverage === "70";
+  document.querySelector('input[name="coverage"][value="90"]').checked = preset.coverage === "90";
+  document.getElementById("livesSaved").value = preset.livesSaved;
+  document.getElementById("livesSavedValue").textContent = preset.livesSaved;
+  document.getElementById("benefitScenario").value = preset.benefitScenario;
+  updateCostInputs();
+  updateAll();
+}
+
+// Reset inputs
+function resetInputs() {
+  console.log('Resetting inputs');
+  document.getElementById("country_select").value = "Australia";
+  document.getElementById("adjustCOL").value = "no";
+  document.getElementById("severitySelect").value = "pooled";
+  document.querySelectorAll('input[name="scope"]').forEach(input => input.checked = false);
+  document.querySelectorAll('input[name="exemption"]').forEach(input => input.checked = false);
+  document.querySelectorAll('input[name="coverage"]').forEach(input => input.checked = false);
+  document.getElementById("livesSaved").value = 25;
+  document.getElementById("livesSavedValue").textContent = 25;
+  document.getElementById("benefitScenario").value = "medium";
+  updateCostInputs();
+  updateAll();
+}
+
+// Update all visualizations when inputs change
+function updateAll() {
+  console.log('Updating all visualizations');
+  if (currentInputs) {
+    currentScenario = buildScenarioFromInputs();
+    updateUptakeProgressBar();
+    renderWTSLChart();
+    renderCostsBenefits();
+  }
+}
